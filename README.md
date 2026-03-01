@@ -29,4 +29,4 @@ See `docs/` for the full technical specification.
 
 ## License
 
-[TBD]
+This project is licensed under the terms of the MIT license.
