@@ -22,6 +22,11 @@ class AutoLapDetector {
   AutoLapState get currentState => _state;
   double get currentBaseline => _preEffortBaseline.average;
 
+  /// The offset (seconds) at which the current effort started.
+  /// Only meaningful when [currentState] is pendingStart, inEffort,
+  /// or pendingEnd.
+  int? get tentativeStartOffset => _tentativeStartOffset;
+
   AutoLapEvent? processReading(SensorReading reading) {
     final power = reading.power;
     final offset = reading.timestamp.inSeconds;

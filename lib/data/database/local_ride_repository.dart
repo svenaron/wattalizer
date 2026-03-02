@@ -14,6 +14,13 @@ class LocalRideRepository implements RideRepository {
   LocalRideRepository(this._db);
   final AppDatabase _db;
 
+  // --- Transactions ---
+
+  @override
+  Future<void> transaction(Future<void> Function() work) async {
+    await _db.transaction(work);
+  }
+
   // --- Private Helpers ---
 
   RideSummary _summaryFromRow(RideRow row) {
