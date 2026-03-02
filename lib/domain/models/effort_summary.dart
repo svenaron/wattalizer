@@ -20,4 +20,18 @@ class EffortSummary {
   final double totalKilojoules;
   final double? avgLeftRightBalance;
   final int? restSincePrevious;
+
+  EffortSummary copyWith({int? restSincePrevious}) {
+    return EffortSummary(
+      durationSeconds: durationSeconds,
+      avgPower: avgPower,
+      peakPower: peakPower,
+      avgHeartRate: avgHeartRate,
+      maxHeartRate: maxHeartRate,
+      avgCadence: avgCadence,
+      totalKilojoules: totalKilojoules,
+      avgLeftRightBalance: avgLeftRightBalance,
+      restSincePrevious: restSincePrevious ?? this.restSincePrevious,
+    );
+  }
 }
