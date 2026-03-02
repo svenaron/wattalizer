@@ -16,13 +16,15 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 **Phase 1 total: 147 tests passing** (77 models/core + 70 services)
 
+**Phase 2 total (Steps 8-10): 203 tests passing**
+
 ## Phase 2: Data Layer
 
 | # | Item | Status |
 |---|---|---|
 | 8 | Database schema + Drift codegen | ✅ Done | 8 tables, `@DataClassName` row aliases, `database.g.dart` generated. `fromRow`/`toCompanion` on all 6 domain models. `RideRepository` interface complete. |
-| 9 | LocalRideRepository | ⬜ Pending |
-| 10 | BLE profile parsers (power, HR, CSC) | ⬜ Pending |
+| 9 | LocalRideRepository | ✅ Done | 43 tests. Tag+filter via customSelect/GROUP BY, cascade delete, upserts. |
+| 10 | BLE profile parsers (power, HR, CSC) | ✅ Done | `BleService` abstract interface + data types in `lib/domain/interfaces/ble_service.dart`. `PowerParser`, `HrParser`, `CscParser` in `lib/data/ble/`. 13 tests. |
 | 11 | BleServiceImpl | ⬜ Pending |
 | 12 | TcxSerializer + TcxParser | ⬜ Pending |
 

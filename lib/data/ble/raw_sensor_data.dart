@@ -1,1 +1,2 @@
-// TODO: Implement — RawSensorData class — see S1.1
+// RawSensorData and related types are defined in:
+// lib/domain/interfaces/ble_service.dart
