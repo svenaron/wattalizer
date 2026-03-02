@@ -16,6 +16,8 @@ All specs and implementation guides are in `docs/`. Read `docs/CLAUDE.md` first 
 
 **Do not start coding without reading `docs/CLAUDE.md`.**
 
+See `docs/progress.md` for current implementation status.
+
 ## Architecture
 
 Three-layer architecture with strict dependency rules. See `lib/CLAUDE.md` for the full picture.

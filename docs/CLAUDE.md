@@ -2,6 +2,8 @@
 
 Five documents, each with a specific purpose. You don't need to read all of them upfront — use the lookup table below.
 
+See `progress.md` for current implementation status (which items are done vs pending).
+
 ## Documents
 
 | Document | What it covers | When to read it |

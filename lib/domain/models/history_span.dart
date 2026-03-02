@@ -1,1 +1,1 @@
-// TODO: Implement — HistorySpan enum — see IG12.6
+enum HistorySpan { week, month, year, allTime }
