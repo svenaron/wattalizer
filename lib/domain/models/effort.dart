@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+import 'package:wattalizer/data/database/database.dart';
 import 'package:wattalizer/domain/models/effort_summary.dart';
 import 'package:wattalizer/domain/models/map_curve.dart';
 
@@ -14,6 +16,49 @@ class Effort {
     required this.summary,
     required this.mapCurve,
   });
+
+  factory Effort.fromRow(EffortRow row, MapCurve curve) {
+    return Effort(
+      id: row.id,
+      rideId: row.rideId,
+      effortNumber: row.effortNumber,
+      startOffset: row.startOffset,
+      endOffset: row.endOffset,
+      type: row.type == 'auto' ? EffortType.auto : EffortType.manual,
+      summary: EffortSummary(
+        durationSeconds: row.durationSeconds,
+        avgPower: row.avgPower,
+        peakPower: row.peakPower,
+        avgHeartRate: row.avgHeartRate,
+        maxHeartRate: row.maxHeartRate,
+        avgCadence: row.avgCadence,
+        totalKilojoules: row.totalKilojoules,
+        avgLeftRightBalance: row.avgLeftRightBalance,
+        restSincePrevious: row.restSincePrevious,
+      ),
+      mapCurve: curve,
+    );
+  }
+
+  EffortsCompanion toCompanion() {
+    return EffortsCompanion.insert(
+      id: id,
+      rideId: rideId,
+      effortNumber: effortNumber,
+      startOffset: startOffset,
+      endOffset: endOffset,
+      type: type == EffortType.auto ? 'auto' : 'manual',
+      durationSeconds: summary.durationSeconds,
+      avgPower: summary.avgPower,
+      peakPower: summary.peakPower,
+      avgHeartRate: Value.absentIfNull(summary.avgHeartRate),
+      maxHeartRate: Value.absentIfNull(summary.maxHeartRate),
+      avgCadence: Value.absentIfNull(summary.avgCadence),
+      totalKilojoules: summary.totalKilojoules,
+      avgLeftRightBalance: Value.absentIfNull(summary.avgLeftRightBalance),
+      restSincePrevious: Value.absentIfNull(summary.restSincePrevious),
+    );
+  }
 
   final String id;
   final String rideId;

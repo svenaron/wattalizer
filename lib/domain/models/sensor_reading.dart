@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:wattalizer/data/database/database.dart';
+
 class SensorReading {
   const SensorReading({
     required this.timestamp,
@@ -20,6 +25,59 @@ class SensorReading {
     this.accumulatedEnergy,
     this.rrIntervals,
   });
+
+  factory SensorReading.fromRow(ReadingRow row) {
+    return SensorReading(
+      timestamp: Duration(seconds: row.offsetSeconds),
+      power: row.power,
+      leftRightBalance: row.leftRightBalance,
+      leftPower: row.leftPower,
+      rightPower: row.rightPower,
+      heartRate: row.heartRate,
+      cadence: row.cadence,
+      crankTorque: row.crankTorque,
+      accumulatedTorque: row.accumulatedTorque,
+      crankRevolutions: row.crankRevolutions,
+      lastCrankEventTime: row.lastCrankEventTime,
+      maxForceMagnitude: row.maxForceMagnitude,
+      minForceMagnitude: row.minForceMagnitude,
+      maxTorqueMagnitude: row.maxTorqueMagnitude,
+      minTorqueMagnitude: row.minTorqueMagnitude,
+      topDeadSpotAngle: row.topDeadSpotAngle,
+      bottomDeadSpotAngle: row.bottomDeadSpotAngle,
+      accumulatedEnergy: row.accumulatedEnergy,
+      rrIntervals: row.rrIntervals != null
+          ? (jsonDecode(row.rrIntervals!) as List).cast<int>()
+          : null,
+    );
+  }
+
+  ReadingsCompanion toCompanion(String rideId) {
+    return ReadingsCompanion.insert(
+      rideId: rideId,
+      offsetSeconds: timestamp.inSeconds,
+      power: Value.absentIfNull(power),
+      leftRightBalance: Value.absentIfNull(leftRightBalance),
+      leftPower: Value.absentIfNull(leftPower),
+      rightPower: Value.absentIfNull(rightPower),
+      heartRate: Value.absentIfNull(heartRate),
+      cadence: Value.absentIfNull(cadence),
+      crankTorque: Value.absentIfNull(crankTorque),
+      accumulatedTorque: Value.absentIfNull(accumulatedTorque),
+      crankRevolutions: Value.absentIfNull(crankRevolutions),
+      lastCrankEventTime: Value.absentIfNull(lastCrankEventTime),
+      maxForceMagnitude: Value.absentIfNull(maxForceMagnitude),
+      minForceMagnitude: Value.absentIfNull(minForceMagnitude),
+      maxTorqueMagnitude: Value.absentIfNull(maxTorqueMagnitude),
+      minTorqueMagnitude: Value.absentIfNull(minTorqueMagnitude),
+      topDeadSpotAngle: Value.absentIfNull(topDeadSpotAngle),
+      bottomDeadSpotAngle: Value.absentIfNull(bottomDeadSpotAngle),
+      accumulatedEnergy: Value.absentIfNull(accumulatedEnergy),
+      rrIntervals: Value.absentIfNull(
+        rrIntervals != null ? jsonEncode(rrIntervals) : null,
+      ),
+    );
+  }
 
   SensorReading copyWith({
     Duration? timestamp,

@@ -1,3 +1,6 @@
+import 'package:drift/drift.dart';
+import 'package:wattalizer/data/database/database.dart';
+
 class AutoLapConfig {
   const AutoLapConfig({
     required this.id,
@@ -48,17 +51,37 @@ class AutoLapConfig {
         inEffortTrailingWindow: 15,
       );
 
-  final String id;
-  final String name;
-  final double startDeltaWatts;
-  final int startConfirmSeconds;
-  final int startDropoutTolerance;
-  final double endDeltaWatts;
-  final int endConfirmSeconds;
-  final int minEffortSeconds;
-  final int preEffortBaselineWindow;
-  final int inEffortTrailingWindow;
-  final bool isDefault;
+  factory AutoLapConfig.fromRow(AutolapConfigRow row) {
+    return AutoLapConfig(
+      id: row.id,
+      name: row.name,
+      startDeltaWatts: row.startDeltaWatts,
+      startConfirmSeconds: row.startConfirmSeconds,
+      startDropoutTolerance: row.startDropoutTolerance,
+      endDeltaWatts: row.endDeltaWatts,
+      endConfirmSeconds: row.endConfirmSeconds,
+      minEffortSeconds: row.minEffortSeconds,
+      preEffortBaselineWindow: row.preEffortBaselineWindow,
+      inEffortTrailingWindow: row.inEffortTrailingWindow,
+      isDefault: row.isDefault,
+    );
+  }
+
+  AutolapConfigsCompanion toCompanion() {
+    return AutolapConfigsCompanion.insert(
+      id: id,
+      name: name,
+      startDeltaWatts: startDeltaWatts,
+      startConfirmSeconds: Value(startConfirmSeconds),
+      startDropoutTolerance: Value(startDropoutTolerance),
+      endDeltaWatts: endDeltaWatts,
+      endConfirmSeconds: Value(endConfirmSeconds),
+      minEffortSeconds: Value(minEffortSeconds),
+      preEffortBaselineWindow: Value(preEffortBaselineWindow),
+      inEffortTrailingWindow: Value(inEffortTrailingWindow),
+      isDefault: Value(isDefault),
+    );
+  }
 
   AutoLapConfig copyWith({
     String? name,
@@ -89,4 +112,16 @@ class AutoLapConfig {
       isDefault: isDefault ?? this.isDefault,
     );
   }
+
+  final String id;
+  final String name;
+  final double startDeltaWatts;
+  final int startConfirmSeconds;
+  final int startDropoutTolerance;
+  final double endDeltaWatts;
+  final int endConfirmSeconds;
+  final int minEffortSeconds;
+  final int preEffortBaselineWindow;
+  final int inEffortTrailingWindow;
+  final bool isDefault;
 }

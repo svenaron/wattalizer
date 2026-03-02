@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:wattalizer/data/database/database.dart';
+
 enum SensorType { power, heartRate, cadence }
 
 class DeviceInfo {
@@ -9,6 +14,19 @@ class DeviceInfo {
     this.autoConnect = true,
   });
 
+  factory DeviceInfo.fromRow(DeviceRow row) {
+    final services = (jsonDecode(row.supportedServices) as List)
+        .map((s) => SensorType.values.byName(s as String))
+        .toSet();
+    return DeviceInfo(
+      deviceId: row.deviceId,
+      displayName: row.displayName,
+      supportedServices: services,
+      lastConnected: row.lastConnected,
+      autoConnect: row.autoConnect,
+    );
+  }
+
   DeviceInfo copyWith({String? displayName, bool? autoConnect}) {
     return DeviceInfo(
       deviceId: deviceId,
@@ -16,6 +34,18 @@ class DeviceInfo {
       supportedServices: supportedServices,
       lastConnected: lastConnected,
       autoConnect: autoConnect ?? this.autoConnect,
+    );
+  }
+
+  DevicesCompanion toCompanion() {
+    return DevicesCompanion.insert(
+      deviceId: deviceId,
+      displayName: displayName,
+      supportedServices: jsonEncode(
+        supportedServices.map((s) => s.name).toList(),
+      ),
+      lastConnected: lastConnected,
+      autoConnect: Value(autoConnect),
     );
   }
 
