@@ -1,0 +1,23 @@
+# Flutter / Dart generated
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Pub
+.packages
+.pub-cache/
+.pub/
+
+# Don't ignore pubspec.lock (mobile app — lock file should be committed)
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store
+
+# Coverage
+coverage/
