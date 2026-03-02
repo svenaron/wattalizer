@@ -962,8 +962,8 @@ Widget build(BuildContext context) {
 // test/domain/map_curve_calculator_test.dart
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sprint_power_analyzer/domain/services/map_curve_calculator.dart';
-import 'package:sprint_power_analyzer/domain/models/sensor_reading.dart';
+import 'package:wattalizer/domain/services/map_curve_calculator.dart';
+import 'package:wattalizer/domain/models/sensor_reading.dart';
 
 void main() {
   group('MapCurveCalculator.computeBatch', () {
