@@ -39,6 +39,8 @@ Follow the phased order in `docs/spec-supplement.md` §S9. Each phase should be 
 ## Key Commands
 
 ```bash
+dart format .                             # format all code
+dart fix --apply                          # run static code analysis
 flutter test                              # all tests
 flutter test test/domain/                 # domain only (fastest, run often)
 dart run build_runner build               # regenerate Drift code after table changes
@@ -52,3 +54,9 @@ flutter run                               # run on connected device/emulator
 - **Tests**: one test file per source file, mirrored path. Run `flutter test` after every completed item.
 - **Errors**: sealed `AppError` hierarchy. Repository throws → provider catches → UI shows. Never swallow errors.
 - **Null vs zero**: null = sensor dropout, zero = valid reading (e.g., coasting). This distinction matters everywhere.
+
+## Code Quality
+
+- After writing or modifying Dart files, run `dart format .` then `dart fix --apply` then `dart analyze` and fix any warnings
+- After modifying models or providers, run `dart run build_runner build --delete-conflicting-outputs`
+- Run `flutter test` after significant changes to verify nothing is broken
