@@ -1,6 +1,6 @@
 /// All domain-level errors. Presentation layer maps these
 /// to user-facing messages.
-sealed class AppError {}
+sealed class AppError implements Exception {}
 
 // --- BLE ---
 
