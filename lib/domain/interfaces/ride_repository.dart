@@ -39,6 +39,12 @@ class RideSummaryRow {
 }
 
 abstract class RideRepository {
+  // --- Transactions ---
+
+  /// Run [work] inside a single database transaction.
+  /// Useful when the caller needs to atomically persist multiple entities.
+  Future<void> transaction(Future<void> Function() work);
+
   // --- Ride CRUD ---
   Future<void> saveRide(Ride ride);
 
