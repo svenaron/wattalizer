@@ -35,7 +35,9 @@ class BleServiceImpl implements domain.BleService {
         scanFilter: ScanFilter(
           withServices: [_powerServiceUuid, _hrServiceUuid, _cscServiceUuid],
         ),
-      ),
+      ).catchError((_) {
+        // BLE not available (e.g. iOS simulator) — silently ignore.
+      }),
     );
     // universal_ble emits one device at a time. The provider layer
     // accumulates into a list with dedup by deviceId.
