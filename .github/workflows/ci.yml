@@ -11,6 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Rebase on main
+        run: |
+          git config user.name "CI"
+          git config user.email "ci@github.com"
+          git fetch origin main
+          git rebase origin/main
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
