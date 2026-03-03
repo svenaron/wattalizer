@@ -2,9 +2,21 @@
 // See docs/spec-v1.1.md §2 for architecture overview
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wattalizer/data/database/database.dart';
+import 'package:wattalizer/data/database/local_ride_repository.dart';
+import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
+import 'package:wattalizer/presentation/screens/ride_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: SprintPowerAnalyzerApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final db = await AppDatabase.open();
+  final repo = LocalRideRepository(db);
+  runApp(
+    ProviderScope(
+      overrides: [rideRepositoryProvider.overrideWithValue(repo)],
+      child: const SprintPowerAnalyzerApp(),
+    ),
+  );
 }
 
 class SprintPowerAnalyzerApp extends StatelessWidget {
@@ -15,7 +27,7 @@ class SprintPowerAnalyzerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Sprint Power Analyzer',
       theme: ThemeData.dark(useMaterial3: true),
-      // home: const RideScreen(),
+      home: const RideScreen(),
     );
   }
 }
