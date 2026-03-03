@@ -8,6 +8,7 @@ import 'package:wattalizer/presentation/providers/ble_connection_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_mode_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_session_provider.dart';
+import 'package:wattalizer/presentation/widgets/device_sheet.dart';
 
 // ---------------------------------------------------------------------------
 // Root screen
@@ -61,7 +62,7 @@ class _IdleView extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: isConnected
                       ? () => ref.read(rideSessionProvider.notifier).startRide()
-                      : null,
+                      : () => showDeviceSheet(context),
                   child: Text(
                     isConnected ? 'Start Ride' : 'Connect a sensor to start',
                     style: const TextStyle(fontSize: 18),
@@ -463,9 +464,12 @@ class _SensorStatusBar extends StatelessWidget {
         ? Colors.greenAccent
         : Colors.white54;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Text(label, style: TextStyle(fontSize: 13, color: color)),
+    return GestureDetector(
+      onTap: () => showDeviceSheet(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(label, style: TextStyle(fontSize: 13, color: color)),
+      ),
     );
   }
 }
