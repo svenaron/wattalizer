@@ -18,6 +18,8 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 **Phase 2 total (Steps 8-12): 244 tests passing**
 
+**Phase 3 total: 274 tests passing**
+
 ## Phase 2: Data Layer
 
 | # | Item | Status |
@@ -32,8 +34,10 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 | # | Item | Status |
 |---|---|---|
-| 13 | RideSessionManager | ⬜ Pending |
-| 14 | ExportService | ⬜ Pending |
+| 13 | RideSessionManager | ✅ Done | Full IG17 + IG17.1 live-curve cache. Injectable wakelock. `transaction()` for atomic `end()`. 17 tests. |
+| 14 | ExportService | ✅ Done | `exportTcx`, `importTcx` (dedup ±2s/±5%), `importZip` (per-file results). 13 tests. |
+
+**Phase 3 total: 274 tests passing**
 
 ## Phase 4: Presentation
 
