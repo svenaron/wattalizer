@@ -42,7 +42,8 @@ Follow the phased order in `docs/spec-supplement.md` §S9. Each phase should be 
 
 ```bash
 dart format .                             # format all code
-dart fix --apply                          # run static code analysis
+dart fix --apply                          # auto-fix issues from static analysis
+dart analyze                              # run static analysis
 flutter test                              # all tests
 flutter test test/domain/                 # domain only (fastest, run often)
 dart run build_runner build               # regenerate Drift code after table changes
