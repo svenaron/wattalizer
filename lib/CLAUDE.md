@@ -37,7 +37,7 @@ Platform-dependent implementations.
 
 - **ble/**: `flutter_reactive_ble` wrapper and BLE profile parsers. See `docs/impl-guide-orchestration.md` IG18 and `docs/impl-guide-models.md` IG15.
 - **database/**: Drift/SQLite. See `docs/impl-guide.md` IG8 and `docs/impl-guide-models.md` IG16.
-- **tcx/**: XML serialization. See `docs/impl-guide.md` IG7 and `docs/spec-v1.1.md` §8.
+- **tcx/**: XML serialization. See `docs/impl-guide.md` IG7 and `docs/spec.md` §8.
 
 ### presentation/
 Flutter UI and Riverpod state management. See `lib/presentation/CLAUDE.md`.

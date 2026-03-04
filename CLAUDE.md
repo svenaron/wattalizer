@@ -1,6 +1,6 @@
 # Sprint Power Analyzer
 
-A cross-platform mobile app (Flutter/Dart) for track cyclists to analyze sprint power output. Connects to BLE power meters, auto-detects sprint efforts, computes MAP (Maximum Average Power) curves, and tracks personal records.
+A cross-platform app (Flutter/Dart, mobile & desktop) for track cyclists to analyze sprint power output. Targets iOS, Android, macOS, Windows, and Linux. Connects to BLE power meters, auto-detects sprint efforts, computes MAP (Maximum Average Power) curves, and tracks personal records.
 
 ## Quick Start
 
@@ -36,6 +36,7 @@ Follow the phased order in `docs/spec-supplement.md` §S9. Each phase should be 
 2. **Data Layer** — database, BLE parsers, TCX serialization
 3. **Orchestration** — RideSessionManager, ExportService
 4. **Presentation** — providers, screens, widgets
+4b. **Desktop Support** — platform scaffolding, responsive layout, keyboard shortcuts
 5. **Polish** — animations, re-detection preview, bulk import
 
 ## Key Commands
@@ -48,6 +49,9 @@ flutter test                              # all tests
 flutter test test/domain/                 # domain only (fastest, run often)
 dart run build_runner build               # regenerate Drift code after table changes
 flutter run                               # run on connected device/emulator
+flutter run -d macos                      # run on macOS
+flutter run -d windows                    # run on Windows
+flutter run -d linux                      # run on Linux
 ```
 
 ## Conventions

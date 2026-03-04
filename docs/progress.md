@@ -50,11 +50,20 @@ Tracks completion status per item in the implementation order (spec-supplement �
 | 19 | PDC screen | ⬜ Pending |
 | 20 | Settings + Auto-Lap Config screen | ⬜ Pending |
 
+## Phase 4b: Desktop Support
+
+| # | Item | Status |
+|---|---|---|
+| 20 | Platform scaffolding (macOS/Windows/Linux/Android dirs, entitlements, min window size) | ⬜ Pending |
+| 21 | Responsive layout (breakpoints, AdaptiveShell, LayoutBuilder in RideScreen) | ⬜ Pending |
+| 22 | Keyboard shortcuts (intents, shortcut map, Focus widget wiring) | ⬜ Pending |
+| 23 | Desktop interaction polish (mouse cursors, tooltips, hover states, adaptive device dialog) | ⬜ Pending |
+
 ## Phase 5: Polish
 
 | # | Item | Status |
 |---|---|---|
-| 21 | Orientation handling | ⬜ Pending |
-| 22 | Animations and transitions | ⬜ Pending |
-| 23 | Re-detection preview | ⬜ Pending |
-| 24 | Bulk import UI | ⬜ Pending |
+| 24 | Orientation handling + desktop window resize transitions | ⬜ Pending |
+| 25 | Animations and transitions | ⬜ Pending |
+| 26 | Re-detection preview | ⬜ Pending |
+| 27 | Bulk import UI | ⬜ Pending |

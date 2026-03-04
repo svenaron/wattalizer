@@ -1,5 +1,5 @@
 // App entry point — ProviderScope wraps MaterialApp
-// See docs/spec-v1.1.md §2 for architecture overview
+// See docs/spec.md §2 for architecture overview
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/data/database/database.dart';

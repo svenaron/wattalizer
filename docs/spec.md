@@ -1,11 +1,16 @@
-# Sprint Power Analyzer – Technical Specification v1
+# Sprint Power Analyzer – Technical Specification v1.2
+
+## Changelog
+
+- **v1.2** (2026-03-04): Multi-platform support (iOS, Android, macOS, Windows, Linux). Responsive layout with compact/medium/expanded breakpoints. Keyboard shortcuts for desktop. Device connection adapts to dialog on wide layouts. Updated tech stack (universal_ble replaces flutter_reactive_ble).
+- **v1.0**: Initial specification — iOS and Android mobile app.
 
 ---
 
 ## 1. Overview
 
 ### 1.1 Purpose
-A cross-platform mobile application for track cyclists and sprint athletes to analyze power output during sprint interval training sessions. The app connects to BLE power meters, automatically detects sprint efforts, computes Maximum Average Power (MAP) curves per effort, and tracks personal records over time.
+A cross-platform application (mobile & desktop) for track cyclists and sprint athletes to analyze power output during sprint interval training sessions. The app connects to BLE power meters, automatically detects sprint efforts, computes Maximum Average Power (MAP) curves per effort, and tracks personal records over time.
 
 ### 1.2 Target Users
 Track cyclists, sprint specialists, and coaches performing high-intensity interval sessions on the track or stationary trainer. The primary use case is repeated short-duration maximal efforts (3–30 seconds) with recovery between efforts.
@@ -20,12 +25,12 @@ Track cyclists, sprint specialists, and coaches performing high-intensity interv
 - TCX import/export for interoperability with Strava, Garmin Connect, etc.
 - Dual-sided power meter support (L/R balance, individual leg power)
 - Focus mode for mid-sprint glanceability
-- Portrait and landscape orientations
+- Responsive layout: mobile portrait/landscape, desktop side-by-side with keyboard shortcuts
 
 ### 1.4 Technology Stack
-- Framework: Flutter (Dart) — single codebase for iOS and Android
+- Framework: Flutter (Dart) — single codebase for iOS, Android, macOS, Windows, Linux
 - State Management: Riverpod
-- BLE: flutter_reactive_ble
+- BLE: universal_ble (cross-platform BLE including desktop)
 - Database: SQLite via Drift (formerly Moor)
 - Charts: fl_chart
 - Export/Import: Custom TCX serializer/parser (XML)
@@ -48,7 +53,7 @@ lib/
 Dependency rule: Presentation → Domain → Data interfaces. Data implements domain interfaces. No layer references the layer above it.
 
 ### 2.2 Data Layer
-- **BleServiceImpl** — wraps flutter_reactive_ble, manages scanning, connection state machine, characteristic subscriptions
+- **BleServiceImpl** — wraps universal_ble, manages scanning, connection state machine, characteristic subscriptions
 - **Profile Parsers** — stateless byte-to-typed-data parsers for Cycling Power (0x1818), Heart Rate (0x180D), Cycling Speed & Cadence (0x1816)
 - **LocalRideRepository** — Drift/SQLite implementation of the RideRepository interface
 - **TcxSerializer / TcxParser** — XML serialization for import/export
@@ -66,7 +71,7 @@ Dependency rule: Presentation → Domain → Data interfaces. Data implements do
 ### 2.4 Presentation Layer
 - **Riverpod Providers** — reactive state management connecting domain logic to UI
 - **Screens** — Ride (primary), History, Ride Detail, Power Duration Curve, Device Connection, Settings
-- **Orientation** — portrait (focus mode or chart mode), landscape (always chart mode)
+- **Layout** — responsive: compact (mobile/narrow window), medium (tablet/medium window with nav rail), expanded (wide window with focus+chart side-by-side)
 
 ### 2.5 Provider Graph
 
@@ -612,21 +617,30 @@ xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExtension/v2"
 ## 9. UI / Screen Flow
 
 ### 9.1 Navigation Pattern
-Minimal — the Ride Screen is the home screen. All other screens accessed via a menu (slide-out or bottom sheet). Device connection sheet accessible from sensor status icon on any screen.
+Responsive — the Ride Screen is the home screen. On compact layouts, other screens are accessed via a menu or bottom navigation. On medium/expanded layouts, a navigation rail on the left provides access to all screens. Device connection is accessible from the sensor status icon on any screen (or by pressing D).
 
 ### 9.2 Theme
 Dark by default. User can switch to light or system-follow in settings.
 
-### 9.3 Orientation
-- Portrait: Focus mode or Chart mode (user toggleable via horizontal swipe or segmented control)
-- Landscape: Always Chart mode — chart fills screen
-- Smooth animated transitions between orientations
+### 9.3 Layout & Orientation
+
+The app uses a responsive layout that adapts to available width, covering both mobile orientations and desktop window sizes.
+
+| Layout | Width | Behavior |
+|--------|-------|----------|
+| **Compact** | < 600dp | Mobile portrait behavior: Focus or Chart mode (toggle via swipe, keyboard, or segmented control). Landscape on mobile always shows Chart. |
+| **Medium** | 600–899dp | Navigation rail on left, single content panel. Focus/Chart toggle still applies. |
+| **Expanded** | ≥ 900dp | Navigation rail on left, Focus + Chart panels shown side-by-side during active ride (no toggle needed). |
+
+- Orientation is auto-detected on mobile; desktop uses window width for layout decisions
+- Smooth animated transitions between layout sizes
+- Minimum window size on desktop: 400×600
 
 ### 9.4 Screens
 
 #### 9.4.1 Ride Screen (Primary/Home)
 
-Three ride states × two portrait modes + landscape = five layouts.
+Three ride states × multiple layout variants = several layouts. On compact/medium: focus or chart mode with toggle. On expanded: focus + chart side-by-side.
 
 **Idle (no active ride):**
 - Portrait: ambient PDC / last ride summary card (date/time, tags, key stats), large Start Ride button, sensor status icon
@@ -663,30 +677,41 @@ Between efforts:
 - Historical band visible
 - "Waiting for effort…" indicator
 
-**Active ride — Landscape (always chart):**
+**Active ride — Landscape / medium layout (always chart):**
 - Chart fills ~85% of screen width
 - Left panel: power, HR, cadence, effort info, lap/stop buttons
 - Key duration stats overlaid at chart bottom edge
 
-**Interaction details:**
-- Focus ↔ Chart toggle: **horizontal swipe only** (minimum 80px movement). No tap-to-toggle — taps are reserved exclusively for buttons and interactive elements. The segmented control pills (Focus / Chart) at the top of the screen serve as a visible affordance and fallback for users who don't discover the swipe gesture.
-- Landscape triggered by phone rotation (auto-detected)
-- Stop ride: long-press (1.5s) with circular progress indicator
-- Manual lap: large touch target (48×48 minimum), positioned to avoid accidental taps
-- Screen stays awake during active ride (wakelock)
+**Active ride — Expanded layout (≥ 900dp):**
+- Focus panel (~40% width) + Chart panel (~60% width) side by side
+- Both panels update in real time during effort
+- LAP/STOP buttons in focus panel
+- No mode toggle needed — both modes always visible
+- Key duration stats at chart bottom edge
 
-#### 9.4.2 Device Connection (Bottom Sheet)
+**Interaction details:**
+- Focus ↔ Chart toggle (compact/medium only): horizontal swipe (touch, minimum 80px) OR left/right arrow keys (keyboard) OR segmented control pills (click/tap). No tap-to-toggle on empty areas — taps reserved for buttons and interactive elements.
+- On expanded layout, both modes are always visible — no toggle needed
+- Landscape triggered by device rotation (mobile) or window width (desktop)
+- Start ride: tap Start button OR press Enter (when sensor connected)
+- Stop ride: long-press 1.5s (touch) with circular progress indicator, OR press Escape → confirmation dialog (keyboard)
+- Manual lap: tap LAP button (48×48 minimum touch target) OR press Space
+- Open device connection: tap sensor status bar OR press D
+- Screen stays awake during active ride (wakelock on supported platforms)
+
+#### 9.4.2 Device Connection
+- On compact layout: modal bottom sheet. On medium/expanded: centered dialog (max 480px wide).
 - Remembered devices at top with status and connect/disconnect toggle
 - Scan results below with signal strength and service icons (power/HR/cadence)
-- Tap discovered device to connect and remember
-- Dismiss by swipe-down — connection persists in background
+- Tap/click discovered device to connect and remember
+- Dismiss by swipe-down (mobile) or close button/Escape (desktop) — connection persists in background
 
 #### 9.4.3 Ride History
 - Scrollable list, most recent first
 - Each card: date/time (local format), tags, duration, effort count, avg power, power trace sparkline
 - Filters: time span selector (week/month/year/all) and tag filter (most frequent tags shown as tappable chips, consistent with Ride Detail tag input)
 - Tap → Ride Detail
-- Swipe to delete (with confirmation)
+- Swipe to delete (touch) or select + Delete key (keyboard), both with confirmation
 - Import rides button at bottom
 
 #### 9.4.4 Ride Detail
@@ -703,7 +728,7 @@ Between efforts:
 - Tag filter (same as History, drives tagFilterProvider)
 - Tappable points → tooltip with power value, source effort, ride date (from provenance)
 - Key duration stat cards at bottom
-- Landscape: chart fills screen
+- Landscape / expanded layout: chart fills available space
 
 #### 9.4.6 Settings
 - Auto-lap configuration (→ config screen with presets and manual parameter entry)
@@ -717,6 +742,26 @@ Between efforts:
 - Parameter fields with numeric input and tooltips explaining each parameter
 - Selecting a preset fills all fields; modifying any field switches to "Custom"
 - Save button applies config as new default
+
+### 9.5 Keyboard Shortcuts
+
+Keyboard shortcuts are available on all platforms but primarily useful on desktop (physical keyboard). On mobile without a physical keyboard, the `Shortcuts` widget is inert — no platform check needed.
+
+| Key | Action | Context |
+|-----|--------|---------|
+| ← Left arrow | Switch to Focus mode | Active ride, compact/medium layout |
+| → Right arrow | Switch to Chart mode | Active ride, compact/medium layout |
+| Space | Manual LAP | Active ride |
+| Escape | Stop ride (shows confirmation dialog) | Active ride |
+| Enter | Start ride | Idle, sensor connected |
+| D | Open device connection sheet/dialog | Any |
+
+### 9.6 Desktop Interaction Polish
+
+- **Mouse cursors**: Clickable elements show pointer cursor on hover
+- **Tooltips**: Interactive elements show tooltip with action name and keyboard shortcut (e.g., "Manual lap (Space)")
+- **Hover states**: Buttons and interactive elements show hover highlight
+- **Scrollbars**: Visible by default on desktop (Flutter platform default)
 
 ---
 
@@ -799,9 +844,10 @@ Between efforts:
 
 **Widget tests:**
 - Ride screen in each state: correct buttons/elements present
-- Focus ↔ Chart mode swipe toggle
-- Device sheet: scan results display
-- Landscape layout triggers
+- Focus ↔ Chart mode toggle (swipe, keyboard shortcut, segmented control)
+- Device sheet/dialog: scan results display
+- Layout transitions (compact ↔ medium ↔ expanded)
+- Keyboard shortcut intents fire correct actions
 - Tag input with suggestions
 
 **Provider tests:**
@@ -812,14 +858,15 @@ Between efforts:
 
 ### 10.4 Manual Testing
 
-**BLE on real hardware:**
+**BLE on real hardware (per platform):**
 - Actual sensors (power meter, HR strap)
 - Connection reliability and reconnection
 - Data accuracy vs reference device
+- Desktop BLE: macOS (native CoreBluetooth), Windows (WinRT), Linux (BlueZ)
 
 **Visual/UX:**
 - Chart rendering correctness
-- Orientation transitions (smooth animation)
+- Layout transitions (orientation on mobile, window resize on desktop)
 - Focus mode readability at arm's length
 - Record-breaking animation
 - Sunlight readability
@@ -841,7 +888,7 @@ Between efforts:
 ## 11. Future Considerations (out of scope for v1)
 
 **v1.1 — Near-term (OAuth-dependent features):**
-- Strava integration — OAuth2 connection to upload rides (TCX) and pull activities via Strava V3 API (free, no registration cost). Requires flutter_secure_storage for token management and deep link setup on both platforms.
+- Strava integration — OAuth2 connection to upload rides (TCX) and pull activities via Strava V3 API (free, no registration cost). Requires flutter_secure_storage for token management and deep link setup on mobile platforms.
 - Cloud backup — Sync/backup local SQLite DB to cloud storage (GDrive, iCloud, Dropbox). Local DB remains source of truth. Also OAuth-dependent. Can share OAuth infrastructure with Strava integration.
 
 **Later:**
@@ -862,18 +909,18 @@ Between efforts:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.x
-  flutter_reactive_ble: ^5.x
+  flutter_riverpod: ^3.x
+  universal_ble: ^1.x     # cross-platform BLE (iOS, Android, macOS, Windows, Linux)
   drift: ^2.x
   sqlite3_flutter_libs: ^0.x
-  fl_chart: ^0.69.x
+  fl_chart: ^1.x
   path_provider: ^2.x
-  share_plus: ^7.x
-  file_picker: ^6.x
-  xml: ^6.x          # TCX parsing
+  share_plus: ^12.x
+  file_picker: ^10.x
+  xml: ^6.x               # TCX parsing
   uuid: ^4.x
-  wakelock_plus: ^1.x
-  archive: ^3.x      # ZIP import
+  wakelock_plus: ^1.x     # screen awake (macOS/Windows/iOS/Android; no-op on Linux)
+  archive: ^4.x           # ZIP import
 
 dev_dependencies:
   flutter_test:
@@ -881,5 +928,5 @@ dev_dependencies:
   drift_dev: ^2.x
   build_runner: ^2.x
   mockito: ^5.x
-  flutter_lints: ^3.x
+  very_good_analysis: ^10.x
 ```

@@ -1,8 +1,8 @@
-# Sprint Power Analyzer – Spec Supplement v1.0
+# Sprint Power Analyzer – Spec Supplement v1.1
 
 ## Purpose
 
-This supplement resolves ambiguities and adds explicit contracts to the main specification (v1.0) so that an AI coding agent (e.g., Claude Code) can implement the app without human judgment calls. Every section references the gap it closes.
+This supplement resolves ambiguities and adds explicit contracts to the main specification (v1.2) so that an AI coding agent (e.g., Claude Code) can implement the app without human judgment calls. Every section references the gap it closes.
 
 ---
 
@@ -430,12 +430,14 @@ App moves to background (lifecycle event)
   │
   ├─ Ride continues. BLE subscription persists (OS-level).
   │    On iOS: background BLE is supported for connected peripherals
-  │    On Android: foreground service required (flutter_reactive_ble handles this)
+  │    On Android: foreground service required (universal_ble handles this)
+  │    On macOS: BLE continues when app window is not focused
+  │    On Windows/Linux: BLE via universal_ble continues in background
   │
   ├─ 1Hz processing continues in isolate/background
   │    UI updates are queued but not rendered
   │
-  ├─ Wakelock is NOT released
+  ├─ Wakelock is NOT released (supported on iOS/Android/macOS/Windows; no-op on Linux)
   │
   ├─ If BLE drops during background:
   │    Reconnection logic runs as normal (exponential backoff)
@@ -544,24 +546,28 @@ app start.
 
 The main spec says "tap anywhere on screen" to toggle Focus ↔ Chart. This is removed — too easy to accidentally toggle when trying to tap LAP/STOP, and too easy to miss buttons.
 
-### Resolution: Swipe only. No tap-to-toggle.
+### Resolution: Swipe, keyboard, or segmented control. No tap-to-toggle on empty areas.
 
 ```
-Focus ↔ Chart toggle:
-  ONLY METHOD: Horizontal swipe (left = chart, right = focus)
-  Swipe gesture requires minimum 80px horizontal movement to trigger.
-  
-  NO tap-to-toggle anywhere. Tap is reserved exclusively for buttons
-  and interactive elements.
+Focus ↔ Chart toggle (compact/medium layout only):
+  METHODS:
+    1. Horizontal swipe (left = chart, right = focus) — min 80px movement
+    2. Left/right arrow keys (keyboard)
+    3. Segmented control pills at top (tap/click)
 
-Interactive elements (consume tap):
-  LAP button
-  STOP button
+  NO tap-to-toggle on empty screen areas. Tap is reserved exclusively
+  for buttons and interactive elements.
+
+Interactive elements (consume tap/click):
+  LAP button (or Space key)
+  STOP button (long-press, or Escape key → confirmation dialog)
   Chart tooltip interaction points
   Mode toggle pills at top (explicit Focus / Chart segmented control)
 ```
 
-The segmented control pills at the top of the active ride screen serve as a visible affordance and a fallback for users who don't discover the swipe gesture.
+The segmented control pills at the top of the active ride screen serve as a visible affordance and a fallback for users who don't discover the swipe gesture or keyboard shortcuts.
+
+On expanded layout (≥ 900dp), Focus and Chart are shown side-by-side — no toggle is needed.
 
 ---
 
@@ -704,10 +710,16 @@ Recommended order to minimize rework and enable incremental testing:
 18. **PDC screen**
 19. **Settings + Auto-Lap Config screen**
 
+### Phase 4b: Desktop Support
+20. **Platform scaffolding** — Generate macOS/Windows/Linux/Android dirs, BLE entitlements, min window size
+21. **Responsive layout** — Breakpoints, AdaptiveShell (nav rail vs bottom nav), LayoutBuilder in RideScreen
+22. **Keyboard shortcuts** — Intent classes, shortcut map, Focus widget wiring
+23. **Desktop interaction polish** — Mouse cursors, tooltips with shortcut hints, adaptive device dialog
+
 ### Phase 5: Polish
-20. **Orientation handling**
-21. **Animations and transitions**
-22. **Re-detection preview**
-23. **Bulk import UI**
+24. **Orientation handling** — smooth transitions on mobile rotation and desktop window resize
+25. **Animations and transitions**
+26. **Re-detection preview**
+27. **Bulk import UI**
 
 Each phase should be fully tested before moving to the next. The agent should run `dart test` / `flutter test` after completing each numbered item.
