@@ -117,12 +117,8 @@ class LocalRideRepository implements RideRepository {
           });
         }
 
-        for (final effort in ride.efforts) {
-          await _db.into(_db.efforts).insert(effort.toCompanion());
-          await _db.batch((b) {
-            b.insertAll(_db.mapCurves, effort.mapCurve.toCompanions());
-          });
-        }
+        // Efforts and map_curves are persisted separately by the caller
+        // (e.g. RideSessionManager.end() calls saveEfforts + saveMapCurve).
       });
     } catch (e) {
       throw DatabaseError(operation: 'save_ride', detail: e.toString());

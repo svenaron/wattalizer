@@ -57,8 +57,18 @@ class _DeviceSheetState extends ConsumerState<_DeviceSheet> {
   }
 
   void _startScan() {
+    _scanResults = [];
     _scanSub = _bleService.scanForDevices().listen((devices) {
-      if (mounted) setState(() => _scanResults = devices);
+      if (!mounted) return;
+      setState(() {
+        for (final d in devices) {
+          _scanResults
+            ..removeWhere(
+              (e) => e.deviceId == d.deviceId,
+            )
+            ..add(d);
+        }
+      });
     });
   }
 

@@ -19,24 +19,26 @@ class TcxParser {
     // Extract startTime from first <Activity><Id>
     final activity = doc.findAllElements('Activity').first;
     final idEl = activity.getElement('Id');
-    final startTime = _parseDateTime(idEl!.innerText.trim());
+    if (idEl == null) {
+      throw const FormatException('TCX Activity missing <Id> element');
+    }
+    final startTime = _parseDateTime(idEl.innerText.trim());
 
-    // Detect ActivityExtension namespace prefix (e.g. "ns3", "tpx", "ax2")
+    // Detect ActivityExtension namespace prefix
     final prefix = _findActivityExtPrefix(doc.rootElement);
 
-    // Collect all trackpoints, flatten across all laps
-    final trackpoints = doc.findAllElements('Trackpoint').toList()
-      ..sort((a, b) {
-        final ta = _parseTrackpointTime(a);
-        final tb = _parseTrackpointTime(b);
-        return ta.compareTo(tb);
-      });
-
-    final readings = <SensorReading>[];
+    // Collect all trackpoints, skip those without valid time
+    final trackpoints = doc.findAllElements('Trackpoint').toList();
+    final timed = <(DateTime, XmlElement)>[];
     for (final tp in trackpoints) {
       final time = _parseTrackpointTime(tp);
-      final offsetSeconds = time.difference(startTime).inSeconds;
+      if (time != null) timed.add((time, tp));
+    }
+    timed.sort((a, b) => a.$1.compareTo(b.$1));
 
+    final readings = <SensorReading>[];
+    for (final (time, tp) in timed) {
+      final offsetSeconds = time.difference(startTime).inSeconds;
       readings.add(
         SensorReading(
           timestamp: Duration(seconds: offsetSeconds),
@@ -52,14 +54,30 @@ class TcxParser {
 
   static DateTime _parseDateTime(String s) {
     // DateTime.parse handles ISO 8601 including Z suffix and offset formats.
-    // Bare datetime (no timezone) is assumed UTC.
+    // Dart treats bare datetimes (no timezone) as local time. Per spec S7
+    // we treat them as UTC, so re-construct as UTC if not already.
     final dt = DateTime.parse(s);
-    return dt.toUtc();
+    if (dt.isUtc) return dt;
+    return DateTime.utc(
+      dt.year,
+      dt.month,
+      dt.day,
+      dt.hour,
+      dt.minute,
+      dt.second,
+      dt.millisecond,
+      dt.microsecond,
+    );
   }
 
-  static DateTime _parseTrackpointTime(XmlElement tp) {
+  static DateTime? _parseTrackpointTime(XmlElement tp) {
     final timeEl = tp.getElement('Time');
-    return _parseDateTime(timeEl!.innerText.trim());
+    if (timeEl == null) return null;
+    try {
+      return _parseDateTime(timeEl.innerText.trim());
+    } on FormatException {
+      return null;
+    }
   }
 
   /// Scans xmlns attributes on the root element for the ActivityExtension/v2

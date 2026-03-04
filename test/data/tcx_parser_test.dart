@@ -225,5 +225,88 @@ void main() {
       final result = TcxParser.parse(_ig71Xml);
       expect(result.startTime.isUtc, true);
     });
+
+    test('bare datetime (no timezone) is treated as UTC', () {
+      final result = TcxParser.parse(_bareDatetimeXml);
+      expect(result.startTime.isUtc, true);
+      expect(result.startTime.hour, 10);
+      expect(result.readings.first.timestamp.inSeconds, 5);
+    });
+
+    test('trackpoint without <Time> is skipped', () {
+      final result = TcxParser.parse(_missingTimeXml);
+      expect(result.readings.length, 1);
+      expect(result.readings[0].power, 300.0);
+    });
+
+    test('missing <Id> element throws FormatException', () {
+      expect(
+        () => TcxParser.parse(_missingIdXml),
+        throwsFormatException,
+      );
+    });
   });
 }
+
+const _bareDatetimeXml = '''
+<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase
+  xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+  xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>2026-03-01T10:00:00</Id>
+      <Lap StartTime="2026-03-01T10:00:05">
+        <Track>
+          <Trackpoint>
+            <Time>2026-03-01T10:00:05</Time>
+            <Extensions><ns3:TPX><ns3:Watts>200</ns3:Watts></ns3:TPX></Extensions>
+          </Trackpoint>
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>
+''';
+
+const _missingTimeXml = '''
+<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase
+  xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+  xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>2026-03-01T10:00:00Z</Id>
+      <Lap StartTime="2026-03-01T10:00:05Z">
+        <Track>
+          <Trackpoint>
+            <Extensions><ns3:TPX><ns3:Watts>999</ns3:Watts></ns3:TPX></Extensions>
+          </Trackpoint>
+          <Trackpoint>
+            <Time>2026-03-01T10:00:05Z</Time>
+            <Extensions><ns3:TPX><ns3:Watts>300</ns3:Watts></ns3:TPX></Extensions>
+          </Trackpoint>
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>
+''';
+
+const _missingIdXml = '''
+<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase
+  xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Lap StartTime="2026-03-01T10:00:05Z">
+        <Track>
+          <Trackpoint>
+            <Time>2026-03-01T10:00:05Z</Time>
+          </Trackpoint>
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>
+''';

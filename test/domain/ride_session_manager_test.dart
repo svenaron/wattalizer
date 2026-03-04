@@ -255,6 +255,37 @@ void main() {
         expect(state.autoLapState, AutoLapState.inEffort);
         expect(state.liveEffortCurve, isNotNull);
       });
+
+      test('live curve 1s value is not double-counted on effort start', () {
+        final sc = StreamController<RawSensorData>();
+        final mgr = makeManager()..start(sc.stream);
+
+        // Build baseline (5 ticks at 100W)
+        for (var i = 0; i < 5; i++) {
+          mgr.currentBin.add(
+            RawSensorData(
+              receivedAt: DateTime.now(),
+              power: const PowerData(instantaneousPower: 100),
+            ),
+          );
+          mgr.processTick();
+        }
+
+        // Spike that triggers effort start (confirm=1)
+        mgr.currentBin.add(
+          RawSensorData(
+            receivedAt: DateTime.now(),
+            power: const PowerData(instantaneousPower: 350),
+          ),
+        );
+        mgr.processTick();
+
+        final state = emittedStates.last as RideStateActive;
+        expect(state.liveEffortCurve, isNotNull);
+        // 1-second best power should be 350, not 700 (double-feed bug)
+        expect(state.liveEffortCurve!.values[0], 350.0);
+        unawaited(sc.close());
+      });
     });
 
     // -------------------------------------------------------------------------

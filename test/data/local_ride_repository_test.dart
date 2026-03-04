@@ -80,6 +80,16 @@ SensorReading _makeReading(int offsetSeconds, {double? power}) {
   );
 }
 
+/// Saves a ride and its efforts+map_curves separately (mirrors
+/// how RideSessionManager.end() persists data after Bug 2 fix).
+/// saveEfforts already inserts map_curves, so no separate saveMapCurve needed.
+Future<void> _saveRideWithEfforts(LocalRideRepository repo, Ride ride) async {
+  await repo.saveRide(ride);
+  if (ride.efforts.isNotEmpty) {
+    await repo.saveEfforts(ride.id, ride.efforts);
+  }
+}
+
 void main() {
   late AppDatabase db;
   late LocalRideRepository repo;
@@ -138,7 +148,7 @@ void main() {
     test('round-trip preserves efforts with map curves', () async {
       final effort = _makeEffort('e1', 'r1');
       final ride = _makeRide('r1', efforts: [effort]);
-      await repo.saveRide(ride);
+      await _saveRideWithEfforts(repo, ride);
       final loaded = await repo.getRide('r1');
 
       expect(loaded!.efforts.length, 1);
@@ -156,7 +166,7 @@ void main() {
       final e2 = _makeEffort('e2', 'r1', effortNumber: 2);
       final e3 = _makeEffort('e3', 'r1', effortNumber: 3);
       final ride = _makeRide('r1', efforts: [e3, e1, e2]); // out of order
-      await repo.saveRide(ride);
+      await _saveRideWithEfforts(repo, ride);
       final loaded = await repo.getRide('r1');
 
       expect(loaded!.efforts.map((e) => e.effortNumber).toList(), [1, 2, 3]);
@@ -217,7 +227,7 @@ void main() {
         () async {
       final effort = _makeEffort('e1', 'r1');
       final ride = _makeRide('r1', tags: ['sprint'], efforts: [effort]);
-      await repo.saveRide(ride);
+      await _saveRideWithEfforts(repo, ride);
       await repo.insertReadings('r1', [_makeReading(1), _makeReading(2)]);
 
       await repo.deleteRide('r1');
@@ -309,7 +319,7 @@ void main() {
         'r1',
         efforts: [_makeEffort('e1', 'r1')],
       );
-      await repo.saveRide(ride);
+      await _saveRideWithEfforts(repo, ride);
 
       final newEfforts = [
         _makeEffort('e2', 'r1'),
@@ -439,7 +449,8 @@ void main() {
       );
 
       // Need a ride + effort row for the effortId FK
-      await repo.saveRide(_makeRide('r1', efforts: [_makeEffort('e1', 'r1')]));
+      await _saveRideWithEfforts(
+          repo, _makeRide('r1', efforts: [_makeEffort('e1', 'r1')]),);
       // Clear auto-saved curve and save custom one
       await (db.delete(db.mapCurves)..where((t) => t.effortId.equals('e1')))
           .go();
@@ -508,8 +519,8 @@ void main() {
           _makeEffort('e3', 'r2'),
         ],
       );
-      await repo.saveRide(ride1);
-      await repo.saveRide(ride2);
+      await _saveRideWithEfforts(repo, ride1);
+      await _saveRideWithEfforts(repo, ride2);
 
       final curves = await repo.getAllEffortCurves();
       expect(curves.length, 3);
@@ -522,7 +533,7 @@ void main() {
         startTime: DateTime(2024, 6, 15),
         efforts: [_makeEffort('e1', 'r1', effortNumber: 2)],
       );
-      await repo.saveRide(ride);
+      await _saveRideWithEfforts(repo, ride);
 
       final curves = await repo.getAllEffortCurves();
       expect(curves.length, 1);
@@ -544,8 +555,8 @@ void main() {
         startTime: DateTime(2024, 6),
         efforts: [_makeEffort('e2', 'r2')],
       );
-      await repo.saveRide(ride1);
-      await repo.saveRide(ride2);
+      await _saveRideWithEfforts(repo, ride1);
+      await _saveRideWithEfforts(repo, ride2);
 
       final curves = await repo.getAllEffortCurves(
         from: DateTime(2024, 3),

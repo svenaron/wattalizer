@@ -88,11 +88,16 @@ class RideSessionManager {
 
     // Feed detector
     final event = _detector.processReading(reading);
+    final calcBeforeEvent = _liveEffortCalc;
     _handleEvent(event);
 
-    // Feed live effort calculator if active (IG17.1 optimization: cache result)
-    if (_liveEffortCalc != null) {
-      _latestLiveCurve = _liveEffortCalc!.updateLive(reading, 'live');
+    // Feed live effort calculator if active (IG17.1 optimization).
+    // Skip if _handleEvent just started a new effort — backfill
+    // already included this reading, feeding again double-counts.
+    if (_liveEffortCalc != null &&
+        _liveEffortCalc == calcBeforeEvent) {
+      _latestLiveCurve =
+          _liveEffortCalc!.updateLive(reading, 'live');
     }
 
     _emitState();
@@ -156,7 +161,7 @@ class RideSessionManager {
       // Backfill: feed readings from startOffset to now into live calc
       for (final r in _readings) {
         if (r.timestamp.inSeconds >= event.startOffset) {
-          _liveEffortCalc!.updateLive(r, 'live');
+          _latestLiveCurve = _liveEffortCalc!.updateLive(r, 'live');
         }
       }
     } else if (event is EffortEndedEvent) {
@@ -208,10 +213,8 @@ class RideSessionManager {
     await _repository.transaction(() async {
       await _repository.saveRide(ride);
       await _repository.insertReadings(_rideId, _readings);
+      // saveEfforts inserts effort rows + their map_curves in one go
       await _repository.saveEfforts(_rideId, _efforts);
-      for (final effort in _efforts) {
-        await _repository.saveMapCurve(effort.id, effort.mapCurve);
-      }
     });
 
     await _disableWakelock();

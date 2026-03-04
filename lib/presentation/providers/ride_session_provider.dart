@@ -5,6 +5,7 @@ import 'package:wattalizer/domain/services/ride_session_manager.dart';
 import 'package:wattalizer/presentation/providers/autolap_config_provider.dart';
 import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
+import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 import 'package:wattalizer/presentation/providers/sensor_stream_provider.dart';
 
@@ -42,7 +43,8 @@ class RideSessionNotifier extends Notifier<RideState> {
         ..toString(); // silence unused warning
       ref
         ..invalidate(historicalRangeProvider)
-        ..invalidate(maxPowerProvider);
+        ..invalidate(maxPowerProvider)
+        ..invalidate(rideListProvider);
     } on AppError catch (e) {
       _manager = null;
       state = RideStateError(message: 'Failed to save ride: $e');

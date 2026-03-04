@@ -70,10 +70,10 @@ void main() {
   }
 
   // 6 readings: offsets 0,1,2,3,4,5
-  // effort1: [2,3)  effort2: [5,6)
-  // Expected laps: Resting[0,1], Active[2], Resting[3,4], Active[5]
+  // effort1: [2,3] (inclusive)  effort2: [5,5] (inclusive)
+  // Expected laps: Resting[0,1], Active[2,3], Resting[4], Active[5]
   final effort1 = makeEffort(1, 2, 3);
-  final effort2 = makeEffort(2, 5, 6);
+  final effort2 = makeEffort(2, 5, 5);
   final readings = [
     reading(0),
     reading(1),
@@ -119,14 +119,14 @@ void main() {
           laps[0].findAllElements('Trackpoint').toList();
       expect(restingTrackpoints1.length, 2);
 
-      // Active lap #1 (index 1): reading at offset 2
+      // Active lap #1 (index 1): readings at offsets 2, 3 (inclusive end)
       final activeTrackpoints1 = laps[1].findAllElements('Trackpoint').toList();
-      expect(activeTrackpoints1.length, 1);
+      expect(activeTrackpoints1.length, 2);
 
-      // Resting lap #2 (index 2): readings at offsets 3, 4
+      // Resting lap #2 (index 2): reading at offset 4
       final restingTrackpoints2 =
           laps[2].findAllElements('Trackpoint').toList();
-      expect(restingTrackpoints2.length, 2);
+      expect(restingTrackpoints2.length, 1);
 
       // Active lap #2 (index 3): reading at offset 5
       final activeTrackpoints2 = laps[3].findAllElements('Trackpoint').toList();

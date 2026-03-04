@@ -7,6 +7,7 @@ import 'package:wattalizer/presentation/providers/connected_device_provider.dart
 /// Emits [BleConnectionState.disconnected] when no device is selected.
 /// keepAlive — BLE connection persists across all screens.
 final bleConnectionProvider = StreamProvider<BleConnectionState>((ref) {
+  ref.keepAlive();
   final deviceId = ref.watch(connectedDeviceProvider);
   if (deviceId == null) {
     return Stream.value(BleConnectionState.disconnected);

@@ -79,12 +79,12 @@ class TcxSerializer {
         );
       }
 
-      // The effort itself → Active
+      // The effort itself → Active (inclusive endOffset, matching domain)
       final effortReadings = readings
           .where(
             (r) =>
                 r.timestamp.inSeconds >= effort.startOffset &&
-                r.timestamp.inSeconds < effort.endOffset,
+                r.timestamp.inSeconds <= effort.endOffset,
           )
           .toList();
       if (effortReadings.isNotEmpty) {
@@ -97,7 +97,7 @@ class TcxSerializer {
         );
       }
 
-      cursor = effort.endOffset;
+      cursor = effort.endOffset + 1;
     }
 
     // Trailing gap after last effort → Resting
