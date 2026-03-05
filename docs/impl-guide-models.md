@@ -1,4 +1,4 @@
-# Sprint Power Analyzer – Implementation Guide Additions
+# Wattalizer – Implementation Guide Additions
 
 These sections extend the main Implementation Guide (IG1–IG11).
 
