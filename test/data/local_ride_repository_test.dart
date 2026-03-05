@@ -450,7 +450,9 @@ void main() {
 
       // Need a ride + effort row for the effortId FK
       await _saveRideWithEfforts(
-          repo, _makeRide('r1', efforts: [_makeEffort('e1', 'r1')]),);
+        repo,
+        _makeRide('r1', efforts: [_makeEffort('e1', 'r1')]),
+      );
       // Clear auto-saved curve and save custom one
       await (db.delete(db.mapCurves)..where((t) => t.effortId.equals('e1')))
           .go();

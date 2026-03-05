@@ -94,10 +94,8 @@ class RideSessionManager {
     // Feed live effort calculator if active (IG17.1 optimization).
     // Skip if _handleEvent just started a new effort — backfill
     // already included this reading, feeding again double-counts.
-    if (_liveEffortCalc != null &&
-        _liveEffortCalc == calcBeforeEvent) {
-      _latestLiveCurve =
-          _liveEffortCalc!.updateLive(reading, 'live');
+    if (_liveEffortCalc != null && _liveEffortCalc == calcBeforeEvent) {
+      _latestLiveCurve = _liveEffortCalc!.updateLive(reading, 'live');
     }
 
     _emitState();
