@@ -7,6 +7,7 @@ import 'package:wattalizer/data/database/database.dart';
 import 'package:wattalizer/data/database/local_ride_repository.dart';
 import 'package:wattalizer/data/debug/debug_seeder.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
+import 'package:wattalizer/presentation/providers/theme_mode_provider.dart';
 import 'package:wattalizer/presentation/screens/app_shell.dart';
 
 void main() async {
@@ -31,14 +32,18 @@ void main() async {
   );
 }
 
-class SprintPowerAnalyzerApp extends StatelessWidget {
+class SprintPowerAnalyzerApp extends ConsumerWidget {
   const SprintPowerAnalyzerApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       title: 'Wattalizer',
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: themeMode,
       home: const AppShell(),
     );
   }

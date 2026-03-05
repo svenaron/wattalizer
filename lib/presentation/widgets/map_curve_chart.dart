@@ -5,16 +5,20 @@ import 'package:wattalizer/domain/models/map_curve.dart';
 
 /// Renders a MAP curve (power vs duration 1–90s) using fl_chart.
 /// Optionally overlays a historical best/worst band.
+/// When [provenanceRecords] is provided, tooltips include
+/// source effort and date.
 class MapCurveChart extends StatelessWidget {
   const MapCurveChart({
     required this.curve,
     this.historicalRange,
+    this.provenanceRecords,
     this.compact = false,
     super.key,
   });
 
   final MapCurve curve;
   final HistoricalRange? historicalRange;
+  final List<DurationRecord>? provenanceRecords;
   final bool compact;
 
   @override
@@ -137,8 +141,9 @@ class MapCurveChart extends StatelessWidget {
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipItems: (spots) => spots.map((s) {
                       if (s.barIndex != 0) return null;
+                      final label = _tooltipLabel(s);
                       return LineTooltipItem(
-                        '${s.x.toInt()}s: ${s.y.round()} W',
+                        label,
                         const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -151,6 +156,19 @@ class MapCurveChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _tooltipLabel(LineBarSpot s) {
+    final dur = s.x.toInt();
+    final power = s.y.round();
+    final base = '${dur}s: $power W';
+    if (provenanceRecords == null) return base;
+    final idx = dur - 1;
+    if (idx < 0 || idx >= provenanceRecords!.length) return base;
+    final r = provenanceRecords![idx];
+    final d = r.rideDate.toLocal();
+    final date = '${d.day}/${d.month}/${d.year}';
+    return '$base\nEffort #${r.effortNumber}, $date';
   }
 
   double _maxY(List<FlSpot> spots) {

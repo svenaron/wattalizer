@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/domain/interfaces/ride_repository.dart';
-import 'package:wattalizer/domain/models/history_span.dart';
-import 'package:wattalizer/presentation/providers/all_tags_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
-import 'package:wattalizer/presentation/providers/span_selection_provider.dart';
-import 'package:wattalizer/presentation/providers/tag_filter_provider.dart';
 import 'package:wattalizer/presentation/screens/ride_detail_screen.dart';
+import 'package:wattalizer/presentation/widgets/span_selector.dart';
+import 'package:wattalizer/presentation/widgets/tag_filter.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -20,8 +18,8 @@ class HistoryScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const _SpanSelector(),
-            const _TagFilter(),
+            const SpanSelector(),
+            const TagFilter(),
             Expanded(
               child: ridesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -39,81 +37,6 @@ class HistoryScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Span selector
-// ---------------------------------------------------------------------------
-
-class _SpanSelector extends ConsumerWidget {
-  const _SpanSelector();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(spanSelectionProvider);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SegmentedButton<HistorySpan>(
-        segments: const [
-          ButtonSegment(value: HistorySpan.week, label: Text('Week')),
-          ButtonSegment(value: HistorySpan.month, label: Text('Month')),
-          ButtonSegment(value: HistorySpan.year, label: Text('Year')),
-          ButtonSegment(value: HistorySpan.allTime, label: Text('All')),
-        ],
-        selected: {selected},
-        onSelectionChanged: (s) =>
-            ref.read(spanSelectionProvider.notifier).span = s.first,
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Tag filter chips
-// ---------------------------------------------------------------------------
-
-class _TagFilter extends ConsumerWidget {
-  const _TagFilter();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final allTagsAsync = ref.watch<AsyncValue<List<String>>>(allTagsProvider);
-    final selectedTags = ref.watch(tagFilterProvider);
-
-    return allTagsAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (allTags) {
-        if (allTags.isEmpty) return const SizedBox.shrink();
-        return SizedBox(
-          height: 40,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: allTags.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
-            itemBuilder: (context, i) {
-              final tag = allTags[i];
-              final isSelected = selectedTags.contains(tag);
-              return FilterChip(
-                label: Text(tag),
-                selected: isSelected,
-                onSelected: (_) {
-                  final notifier = ref.read(tagFilterProvider.notifier);
-                  if (isSelected) {
-                    notifier.removeTag(tag);
-                  } else {
-                    notifier.addTag(tag);
-                  }
-                },
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }

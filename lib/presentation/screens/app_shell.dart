@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/presentation/providers/ride_session_provider.dart';
 import 'package:wattalizer/presentation/screens/history_screen.dart';
+import 'package:wattalizer/presentation/screens/pdc_screen.dart';
 import 'package:wattalizer/presentation/screens/ride_screen.dart';
+import 'package:wattalizer/presentation/screens/settings_screen.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -29,8 +31,8 @@ class _AppShellState extends ConsumerState<AppShell> {
         children: const [
           RideScreen(),
           HistoryScreen(),
-          _Placeholder(label: 'PDC'),
-          _Placeholder(label: 'Settings'),
+          PdcScreen(),
+          SettingsScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -58,24 +60,6 @@ class _AppShellState extends ConsumerState<AppShell> {
             label: 'Settings',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white38,
-            ),
       ),
     );
   }
