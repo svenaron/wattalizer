@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/data/database/database.dart';
 import 'package:wattalizer/data/database/local_ride_repository.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
-import 'package:wattalizer/presentation/screens/ride_screen.dart';
+import 'package:wattalizer/presentation/screens/app_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class SprintPowerAnalyzerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Wattalizer',
       theme: ThemeData.dark(useMaterial3: true),
-      home: const RideScreen(),
+      home: const AppShell(),
     );
   }
 }

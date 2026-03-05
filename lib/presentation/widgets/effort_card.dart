@@ -1,1 +1,147 @@
-// TODO: Implement — Expandable effort card — see spec §9.4.4
+import 'package:flutter/material.dart';
+import 'package:wattalizer/domain/models/effort.dart';
+import 'package:wattalizer/domain/models/effort_summary.dart';
+import 'package:wattalizer/domain/models/historical_range.dart';
+import 'package:wattalizer/presentation/widgets/map_curve_chart.dart';
+
+/// Expandable card showing per-effort stats and MAP curve.
+class EffortCard extends StatelessWidget {
+  const EffortCard({
+    required this.effort,
+    this.historicalRange,
+    this.isExpanded = false,
+    this.onToggle,
+    super.key,
+  });
+
+  final Effort effort;
+  final HistoricalRange? historicalRange;
+  final bool isExpanded;
+  final VoidCallback? onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = effort.summary;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onToggle,
+        child: AnimatedCrossFade(
+          duration: const Duration(milliseconds: 250),
+          crossFadeState:
+              isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: _collapsed(s),
+          secondChild: _expanded(s),
+        ),
+      ),
+    );
+  }
+
+  Widget _collapsed(EffortSummary s) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Effort ${effort.effortNumber}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_dur(s.durationSeconds)}  \u2022  '
+                  '${s.avgPower.round()} W avg  \u2022  '
+                  '${s.peakPower.round()} W peak',
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 80,
+            height: 40,
+            child: MapCurveChart(curve: effort.mapCurve, compact: true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _expanded(EffortSummary s) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Effort ${effort.effortNumber}',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 12),
+          MapCurveChart(
+            curve: effort.mapCurve,
+            historicalRange: historicalRange,
+          ),
+          const SizedBox(height: 12),
+          _StatRow(label: 'Duration', value: _dur(s.durationSeconds)),
+          _StatRow(label: 'Avg Power', value: '${s.avgPower.round()} W'),
+          _StatRow(label: 'Peak Power', value: '${s.peakPower.round()} W'),
+          if (s.avgHeartRate != null)
+            _StatRow(label: 'Avg HR', value: '${s.avgHeartRate} bpm'),
+          if (s.maxHeartRate != null)
+            _StatRow(label: 'Max HR', value: '${s.maxHeartRate} bpm'),
+          if (s.avgCadence != null)
+            _StatRow(
+              label: 'Avg Cadence',
+              value: '${s.avgCadence!.round()} rpm',
+            ),
+          _StatRow(
+            label: 'Energy',
+            value: '${s.totalKilojoules.toStringAsFixed(1)} kJ',
+          ),
+          if (s.restSincePrevious != null)
+            _StatRow(
+              label: 'Rest since prev',
+              value: _dur(s.restSincePrevious!),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _dur(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+class _StatRow extends StatelessWidget {
+  const _StatRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
+          ),
+          Text(value, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+  }
+}
