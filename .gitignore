@@ -19,5 +19,8 @@ build/
 # macOS
 .DS_Store
 
+# Flutter metadata
+.metadata
+
 # Coverage
 coverage/
