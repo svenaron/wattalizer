@@ -901,6 +901,52 @@ Keyboard shortcuts are available on all platforms but primarily useful on deskto
 - Rider weight and W/kg display — add RiderProfile model, per-screen display rules
 - Apple Watch / Wear OS companion — display focus-mode data on wrist
 
+**Gearing detection per effort**
+
+Each effort records the gear used during that effort, expressed as chainring × sprocket (e.g. 52×15). Gearing is auto-detected when speed and cadence data are both available — either from sensors during recording or from speed/cadence fields in an imported TCX file. If either is unavailable, or if the speed source is virtual (see below), the gearing field is silently omitted (nullable).
+
+*Detection algorithm:*
+
+- Wheel speed (m/s) is converted to wheel RPM using a hardcoded standard track wheel circumference (700c × 23mm ≈ 2096mm). Wheel size will be user-configurable in a later version.
+- Gear ratio = wheel RPM / crank RPM.
+- The ratio is matched against the closest valid combination from a generated lookup table of all chainring × sprocket combinations in the range 46–60t chainrings × 12–17t sprockets (90 combinations total). The table is generated programmatically at runtime from the tooth count ranges, which are the single source of truth. It lives in `core/` as a lazy singleton and is unit tested to verify known combinations and ratio correctness.
+- A computed ratio is only matched if it falls within 1% of a valid combination. Ratios outside this threshold produce a null result.
+- When two combinations are equidistant (within the 1% threshold), the combination with the smaller chainring is preferred.
+- Only readings where cadence ≥ 60 RPM contribute to the modal calculation, excluding the initial acceleration phase where the ratio is noisy and unreliable. This threshold may need tuning based on real-world testing.
+- The modal gear across all qualifying readings within the effort is the representative gear for that effort.
+
+*Data source priority:*
+
+- Same-source pairing takes precedence: if a CSC sensor provides both speed and cadence, that pairing is used. If the power meter provides both crank revolution data and no CSC is present, that pairing is used.
+- Cross-source pairing (CSC speed + power meter cadence, or vice versa) is the fallback when same-source data is unavailable.
+- Virtual speed sources (see below) suppress gear detection regardless of cadence availability.
+
+*Virtual speed (ergs and indoor trainers):*
+
+Bike ergometers such as Wattbike, and smart trainers such as Tacx and Wahoo Kickr, report a virtual speed derived from power output rather than actual wheel rotation. This speed is not usable for gear ratio calculation and must be suppressed.
+
+- Each remembered device has a **virtual speed** flag (persisted in the `devices` table as `virtualSpeed: bool`).
+- The flag is auto-enabled when the device name or manufacturer matches a known erg/trainer list maintained in `core/` (initially: Wattbike, Tacx, Wahoo, Kickr).
+- The user can override the flag in either direction in device settings — force-enable for an unrecognised erg, or force-disable if a known erg name matches a real wheel-based device.
+- For TCX imports, the `<Creator>` field is checked against the same known erg/trainer list. If matched, gear detection is suppressed for that import.
+- The `DeviceInfo` model gains a `virtualSpeed: bool` field (default false, auto-set on first connection for known devices).
+
+*Live gear display during rest:*
+
+Gear detection runs continuously during the rest phase between efforts, not only within effort boundaries. The currently detected gear is displayed in real time on the Ride screen's between-effort state, alongside the recovery timer and last effort summary. This gives the rider a natural opportunity to roll and verify the detected gear is correct before the next effort. The display updates on each 1Hz tick using the same algorithm as per-effort detection (cadence ≥ 60 RPM filter still applies).
+
+*UI placement:*
+
+- **Ride screen, rest state** — live detected gear, updates in real time
+- **Ride Detail effort cards** — stored modal gear for each effort (nullable, omitted if not detected)
+- **PDC provenance tooltip** — gear shown when drilling down from a PDC point to its source effort
+
+*Data model:*
+
+`EffortSummary` gains two nullable integer fields: `chainring: int?` and `sprocket: int?`. These are stored as separate columns in the `efforts` table rather than a combined ratio, preserving the full chainring × sprocket identity.
+
+*Gear-based filtering and grouping in History is explicitly out of scope for this version and noted as a further future extension.*
+
 ---
 
 ## 12. Dependencies (pubspec.yaml)
