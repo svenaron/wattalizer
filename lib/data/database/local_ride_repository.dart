@@ -105,6 +105,13 @@ class LocalRideRepository implements RideRepository {
   // --- Ride CRUD ---
 
   @override
+  Future<int> getRideCount() async {
+    final result =
+        await _db.customSelect('SELECT COUNT(*) AS c FROM rides').getSingle();
+    return result.read<int>('c');
+  }
+
+  @override
   Future<void> saveRide(Ride ride) async {
     try {
       await _db.transaction(() async {

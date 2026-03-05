@@ -502,6 +502,9 @@ class _FakeRepository implements RideRepository {
   final List<RideSummaryRow> _rides;
 
   @override
+  Future<int> getRideCount() async => _rides.length;
+
+  @override
   Future<void> transaction(Future<void> Function() work) async => work();
 
   @override

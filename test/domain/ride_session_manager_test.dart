@@ -519,6 +519,9 @@ class _FakeRepository implements RideRepository {
       insertedReadingsByRide.values.expand((l) => l).toList();
 
   @override
+  Future<int> getRideCount() async => savedRides.length;
+
+  @override
   Future<void> transaction(Future<void> Function() work) async {
     transactionCount++;
     await work();

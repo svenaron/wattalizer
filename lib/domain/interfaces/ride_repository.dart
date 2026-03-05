@@ -46,6 +46,10 @@ abstract class RideRepository {
   Future<void> transaction(Future<void> Function() work);
 
   // --- Ride CRUD ---
+
+  /// Returns the total number of rides in the database.
+  Future<int> getRideCount();
+
   Future<void> saveRide(Ride ride);
 
   /// Updates tags and notes only.
