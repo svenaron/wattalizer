@@ -947,6 +947,16 @@ Gear detection runs continuously during the rest phase between efforts, not only
 
 *Gear-based filtering and grouping in History is explicitly out of scope for this version and noted as a further future extension.*
 
+**TCX "Share to" / file association (mobile)**
+
+On iOS and Android, the app should register as a handler for TCX files so that riders can import directly from other apps or browsers without navigating to the in-app file picker. Examples: opening a downloaded TCX from Safari/Chrome, or sharing from Garmin Connect or Strava's mobile app.
+
+Implementation requires:
+- **iOS** — declare a document type and UTI (`com.garmin.tcx` or a custom UTI with `.tcx` extension) in `Info.plist`, and handle the incoming file via the `AppDelegate` / Flutter method channel
+- **Android** — declare an intent filter for `ACTION_VIEW` and `ACTION_SEND` with MIME type `application/vnd.garmin.tcx+xml` (and `application/octet-stream` as fallback) in `AndroidManifest.xml`
+- Both platforms feed the received file path/URI into the existing `TcxParser` import flow — no parser changes needed
+- Desktop platforms (macOS, Windows, Linux) have analogous file association mechanisms and should be handled at the same time
+
 ---
 
 ## 12. Dependencies (pubspec.yaml)
