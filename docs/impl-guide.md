@@ -1,4 +1,4 @@
-# Sprint Power Analyzer – AI Implementation Guide
+# Wattalizer – AI Implementation Guide
 
 This document provides concrete code patterns, pseudocode, examples, and file structures to supplement the main spec and spec supplement. It is designed to eliminate ambiguity for an AI coding agent.
 

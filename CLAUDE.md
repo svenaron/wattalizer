@@ -1,4 +1,4 @@
-# Sprint Power Analyzer
+# Wattalizer
 
 A cross-platform app (Flutter/Dart, mobile & desktop) for track cyclists to analyze sprint power output. Targets iOS, Android, macOS, Windows, and Linux. Connects to BLE power meters, auto-detects sprint efforts, computes MAP (Maximum Average Power) curves, and tracks personal records.
 

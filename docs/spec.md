@@ -1,4 +1,4 @@
-# Sprint Power Analyzer – Technical Specification v1.2
+# Wattalizer – Technical Specification v1.2
 
 ## Changelog
 

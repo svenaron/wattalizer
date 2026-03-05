@@ -1,4 +1,4 @@
-# Sprint Power Analyzer – Spec Supplement v1.1
+# Wattalizer – Spec Supplement v1.1
 
 ## Purpose
 

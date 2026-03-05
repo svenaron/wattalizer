@@ -1,4 +1,4 @@
-# Sprint Power Analyzer – Implementation Guide IG17–IG19
+# Wattalizer – Implementation Guide IG17–IG19
 
 ---
 
@@ -488,9 +488,9 @@ class BleServiceImpl implements BleService {
 **iOS — `ios/Runner/Info.plist`:**
 ```xml
 <key>NSBluetoothAlwaysUsageDescription</key>
-<string>Sprint Power Analyzer connects to your power meter and heart rate sensor to record training data.</string>
+<string>Wattalizer connects to your power meter and heart rate sensor to record training data.</string>
 <key>NSBluetoothPeripheralUsageDescription</key>
-<string>Sprint Power Analyzer connects to your power meter and heart rate sensor to record training data.</string>
+<string>Wattalizer connects to your power meter and heart rate sensor to record training data.</string>
 <key>UIBackgroundModes</key>
 <array>
   <string>bluetooth-central</string>

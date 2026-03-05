@@ -25,7 +25,7 @@ class SprintPowerAnalyzerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sprint Power Analyzer',
+      title: 'Wattalizer',
       theme: ThemeData.dark(useMaterial3: true),
       home: const RideScreen(),
     );

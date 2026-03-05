@@ -1,4 +1,4 @@
-# Sprint Power Analyzer
+# Wattalizer
 
 A cross-platform mobile app for track cyclists and sprint athletes to analyze power output during sprint interval training.
 
