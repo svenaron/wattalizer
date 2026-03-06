@@ -79,42 +79,46 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('importTcx success', () {
-    test('valid TCX → Ride with importedTcx source and correct startTime',
-        () async {
-      final svc = makeService();
-      final file = _writeTcxFile(tempDir, _validTcx());
+    test(
+      'valid TCX → Ride with importedTcx source and correct startTime',
+      () async {
+        final svc = makeService();
+        final file = _writeTcxFile(tempDir, _validTcx());
 
-      final ride = await svc.importTcx(file, config);
+        final ride = await svc.importTcx(file, config);
 
-      expect(ride.source, RideSource.importedTcx);
-      // startTime comes from the TCX file
-      expect(ride.startTime.toUtc().year, 2024);
-    });
+        expect(ride.source, RideSource.importedTcx);
+        // startTime comes from the TCX file
+        expect(ride.startTime.toUtc().year, 2024);
+      },
+    );
 
-    test('valid TCX → readings re-detected into efforts when above threshold',
-        () async {
-      // Config with low threshold so all power readings form an effort
-      const lowConfig = AutoLapConfig(
-        id: 'low',
-        name: 'Low',
-        startDeltaWatts: 50,
-        startConfirmSeconds: 1,
-        startDropoutTolerance: 0,
-        endDeltaWatts: 50,
-        endConfirmSeconds: 1,
-        minEffortSeconds: 2,
-        preEffortBaselineWindow: 2,
-        inEffortTrailingWindow: 2,
-      );
-      final svc = makeService();
-      final file = _writeTcxFile(tempDir, _validTcxWithSpike());
+    test(
+      'valid TCX → readings re-detected into efforts when above threshold',
+      () async {
+        // Config with low threshold so all power readings form an effort
+        const lowConfig = AutoLapConfig(
+          id: 'low',
+          name: 'Low',
+          startDeltaWatts: 50,
+          startConfirmSeconds: 1,
+          startDropoutTolerance: 0,
+          endDeltaWatts: 50,
+          endConfirmSeconds: 1,
+          minEffortSeconds: 2,
+          preEffortBaselineWindow: 2,
+          inEffortTrailingWindow: 2,
+        );
+        final svc = makeService();
+        final file = _writeTcxFile(tempDir, _validTcxWithSpike());
 
-      final ride = await svc.importTcx(file, lowConfig);
+        final ride = await svc.importTcx(file, lowConfig);
 
-      // We just check that the import succeeds and ride is populated
-      expect(ride.id, isNotEmpty);
-      expect(ride.summary.readingCount, greaterThan(0));
-    });
+        // We just check that the import succeeds and ride is populated
+        expect(ride.id, isNotEmpty);
+        expect(ride.summary.readingCount, greaterThan(0));
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -130,8 +134,11 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>()
-              .having((e) => e.type, 'type', ImportErrorType.malformedXml),
+          isA<TcxImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.malformedXml,
+          ),
         ),
       );
     });
@@ -154,8 +161,11 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>()
-              .having((e) => e.type, 'type', ImportErrorType.noTrackpoints),
+          isA<TcxImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.noTrackpoints,
+          ),
         ),
       );
     });
@@ -167,8 +177,11 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>()
-              .having((e) => e.type, 'type', ImportErrorType.noPowerData),
+          isA<TcxImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.noPowerData,
+          ),
         ),
       );
     });
@@ -188,8 +201,11 @@ void main() {
       expect(
         () => svc.importTcx(bigFile, config),
         throwsA(
-          isA<TcxImportError>()
-              .having((e) => e.type, 'type', ImportErrorType.fileTooLarge),
+          isA<TcxImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.fileTooLarge,
+          ),
         ),
       );
     });
@@ -207,8 +223,11 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>()
-              .having((e) => e.type, 'type', ImportErrorType.duplicateRide),
+          isA<TcxImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.duplicateRide,
+          ),
         ),
       );
     });

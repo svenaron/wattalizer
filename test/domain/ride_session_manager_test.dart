@@ -54,7 +54,6 @@ void main() {
         final sc = StreamController<RawSensorData>();
         makeManager()
           ..start(sc.stream)
-
           // No data added — bin is empty
           ..processTick();
 
@@ -170,8 +169,9 @@ void main() {
         final state = emittedStates.last as RideStateActive;
         expect(state.rideId, isNotEmpty);
         expect(
-          state.startTime
-              .isBefore(DateTime.now().add(const Duration(seconds: 1))),
+          state.startTime.isBefore(
+            DateTime.now().add(const Duration(seconds: 1)),
+          ),
           isTrue,
         );
         expect(state.readings, isEmpty);
@@ -406,7 +406,6 @@ void main() {
         final sc = StreamController<RawSensorData>();
         final mgr = makeManager()
           ..start(sc.stream)
-
           // Start an effort manually and add a tick to have some readings
           ..manualLap();
         mgr.currentBin.add(
@@ -417,7 +416,6 @@ void main() {
         );
         mgr
           ..processTick()
-
           // End it and start a new one
           ..manualLap();
 
@@ -455,34 +453,35 @@ void main() {
         expect(ride.endTime, isNotNull);
       });
 
-      test('persists ride, readings, efforts, and map curves in transaction',
-          () async {
-        final sc = StreamController<RawSensorData>();
-        final mgr = makeManager()..start(sc.stream);
+      test(
+        'persists ride, readings, efforts, and map curves in transaction',
+        () async {
+          final sc = StreamController<RawSensorData>();
+          final mgr = makeManager()..start(sc.stream);
 
-        // Tick a few times with power readings
-        for (var i = 0; i < 3; i++) {
-          mgr.currentBin.add(
-            RawSensorData(
-              receivedAt: DateTime.now(),
-              power: const PowerData(instantaneousPower: 200),
-            ),
-          );
-          mgr.processTick();
-        }
+          // Tick a few times with power readings
+          for (var i = 0; i < 3; i++) {
+            mgr.currentBin.add(
+              RawSensorData(
+                receivedAt: DateTime.now(),
+                power: const PowerData(instantaneousPower: 200),
+              ),
+            );
+            mgr.processTick();
+          }
 
-        await mgr.end();
+          await mgr.end();
 
-        expect(repo.transactionCount, greaterThan(0));
-        expect(repo.savedRides, hasLength(1));
-        expect(repo.insertedReadings, hasLength(3));
-      });
+          expect(repo.transactionCount, greaterThan(0));
+          expect(repo.savedRides, hasLength(1));
+          expect(repo.insertedReadings, hasLength(3));
+        },
+      );
 
       test('finalizes in-progress effort on end', () async {
         final sc = StreamController<RawSensorData>();
         final mgr = makeManager()
           ..start(sc.stream)
-
           // Manually start an effort
           ..manualLap();
 

@@ -10,41 +10,58 @@ import 'package:wattalizer/presentation/providers/connected_device_provider.dart
 import 'package:wattalizer/presentation/providers/device_list_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 
-/// Opens the device connection bottom sheet (spec §9.4.2).
+/// Opens the device connection sheet (spec §9.4.2).
+///
+/// Compact (<600dp): modal bottom sheet with draggable scroll.
+/// Medium/Expanded (>=600dp): centered dialog.
 void showDeviceSheet(BuildContext context) {
-  unawaited(
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  final width = MediaQuery.sizeOf(context).width;
+
+  if (width < 600) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (_) => DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) =>
+              _DeviceSheetContent(scrollController: scrollController),
+        ),
       ),
-      builder: (_) => const DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: _buildSheet,
+    );
+  } else {
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (_) => Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480, maxHeight: 600),
+            child: _DeviceSheetContent(scrollController: ScrollController()),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-Widget _buildSheet(BuildContext context, ScrollController scrollController) {
-  return _DeviceSheet(scrollController: scrollController);
-}
-
-class _DeviceSheet extends ConsumerStatefulWidget {
-  const _DeviceSheet({required this.scrollController});
+class _DeviceSheetContent extends ConsumerStatefulWidget {
+  const _DeviceSheetContent({required this.scrollController});
 
   final ScrollController scrollController;
 
   @override
-  ConsumerState<_DeviceSheet> createState() => _DeviceSheetState();
+  ConsumerState<_DeviceSheetContent> createState() =>
+      _DeviceSheetContentState();
 }
 
-class _DeviceSheetState extends ConsumerState<_DeviceSheet> {
+class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
   StreamSubscription<List<DiscoveredDevice>>? _scanSub;
   List<DiscoveredDevice> _scanResults = [];
   late final BleService _bleService;
@@ -63,9 +80,7 @@ class _DeviceSheetState extends ConsumerState<_DeviceSheet> {
       setState(() {
         for (final d in devices) {
           _scanResults
-            ..removeWhere(
-              (e) => e.deviceId == d.deviceId,
-            )
+            ..removeWhere((e) => e.deviceId == d.deviceId)
             ..add(d);
         }
       });
@@ -100,19 +115,13 @@ class _DeviceSheetState extends ConsumerState<_DeviceSheet> {
             ),
           ),
         ),
-        Text(
-          'Devices',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Devices', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
 
         // --- Remembered devices ---
         ...rememberedAsync.when(
-          data: (devices) => _buildRememberedSection(
-            devices,
-            connectedId,
-            connState,
-          ),
+          data: (devices) =>
+              _buildRememberedSection(devices, connectedId, connState),
           loading: () => [
             const Padding(
               padding: EdgeInsets.all(16),
@@ -230,10 +239,7 @@ class _DeviceSheetState extends ConsumerState<_DeviceSheet> {
       return [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16),
-          child: Text(
-            'Scanning…',
-            style: TextStyle(color: Colors.white54),
-          ),
+          child: Text('Scanning…', style: TextStyle(color: Colors.white54)),
         ),
       ];
     }
@@ -331,8 +337,9 @@ class _DeviceSheetState extends ConsumerState<_DeviceSheet> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Forget Device'),
-        content:
-            Text('Remove "${device.displayName}" from remembered devices?'),
+        content: Text(
+          'Remove "${device.displayName}" from remembered devices?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),

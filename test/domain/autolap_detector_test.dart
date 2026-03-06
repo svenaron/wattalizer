@@ -28,8 +28,10 @@ AutoLapConfig _cfg({
       inEffortTrailingWindow: inWindow,
     );
 
-SensorReading _r(int t, {double? power}) =>
-    SensorReading(timestamp: Duration(seconds: t), power: power);
+SensorReading _r(int t, {double? power}) => SensorReading(
+      timestamp: Duration(seconds: t),
+      power: power,
+    );
 
 void main() {
   group('AutoLapDetector — clean sprint', () {
@@ -82,25 +84,30 @@ void main() {
   });
 
   group('AutoLapDetector — noisy sprint', () {
-    test('one dropout during pendingStart within tolerance → still confirms',
-        () {
-      final detector = AutoLapDetector(_cfg(startConfirm: 3, startDropout: 1));
+    test(
+      'one dropout during pendingStart within tolerance → still confirms',
+      () {
+        final detector = AutoLapDetector(
+          _cfg(startConfirm: 3, startDropout: 1),
+        );
 
-      for (var t = 0; t < 5; t++) {
-        detector.processReading(_r(t, power: 100));
-      }
+        for (var t = 0; t < 5; t++) {
+          detector.processReading(_r(t, power: 100));
+        }
 
-      detector.processReading(_r(5, power: 400)); // pendingStart, confirm=1
-      // Dropout: 150W (not above baseline+200=300)
-      var ev = detector
-          .processReading(_r(6, power: 150)); // dropout=1, within tolerance
-      expect(ev, isNull);
-      expect(detector.currentState, AutoLapState.pendingStart);
+        detector.processReading(_r(5, power: 400)); // pendingStart, confirm=1
+        // Dropout: 150W (not above baseline+200=300)
+        var ev = detector.processReading(
+          _r(6, power: 150),
+        ); // dropout=1, within tolerance
+        expect(ev, isNull);
+        expect(detector.currentState, AutoLapState.pendingStart);
 
-      detector.processReading(_r(7, power: 400)); // confirm=2
-      ev = detector.processReading(_r(8, power: 400)); // confirm=3
-      expect(ev, isA<EffortStartedEvent>());
-    });
+        detector.processReading(_r(7, power: 400)); // confirm=2
+        ev = detector.processReading(_r(8, power: 400)); // confirm=3
+        expect(ev, isA<EffortStartedEvent>());
+      },
+    );
 
     test('too many dropouts in pendingStart → back to idle', () {
       final detector = AutoLapDetector(_cfg());
@@ -140,21 +147,24 @@ void main() {
   group('AutoLapDetector — too-short spike', () {
     test('effort shorter than minEffortSeconds → wasTooShort=true', () {
       // minEffort=10, but effort ends at t=8-5=3 < 10
-      final detector =
-          AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 1, minEffort: 10));
+      final detector = AutoLapDetector(
+        _cfg(startConfirm: 1, endConfirm: 1, minEffort: 10),
+      );
 
       for (var t = 0; t < 5; t++) {
         detector.processReading(_r(t, power: 100));
       }
-      var ev =
-          detector.processReading(_r(5, power: 400)); // → inEffort (confirm=1)
+      var ev = detector.processReading(
+        _r(5, power: 400),
+      ); // → inEffort (confirm=1)
       expect(ev, isA<EffortStartedEvent>());
 
       for (var t = 6; t < 8; t++) {
         detector.processReading(_r(t, power: 400));
       }
-      ev = detector
-          .processReading(_r(8, power: 90)); // end immediately (endConfirm=1)
+      ev = detector.processReading(
+        _r(8, power: 90),
+      ); // end immediately (endConfirm=1)
       expect(ev, isA<EffortEndedEvent>());
       expect((ev! as EffortEndedEvent).wasTooShort, true);
     });
@@ -162,15 +172,17 @@ void main() {
 
   group('AutoLapDetector — back-to-back efforts', () {
     test('second effort detected after first ends', () {
-      final detector =
-          AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 1, minEffort: 1));
+      final detector = AutoLapDetector(
+        _cfg(startConfirm: 1, endConfirm: 1, minEffort: 1),
+      );
 
       for (var t = 0; t < 3; t++) {
         detector.processReading(_r(t, power: 100));
       }
 
-      var ev =
-          detector.processReading(_r(3, power: 400)); // first effort starts
+      var ev = detector.processReading(
+        _r(3, power: 400),
+      ); // first effort starts
       expect(ev, isA<EffortStartedEvent>());
 
       for (var t = 4; t < 7; t++) {
@@ -203,17 +215,19 @@ void main() {
   });
 
   group('AutoLapDetector — gradual ramp', () {
-    test('gradual increase does not trigger if never exceeds baseline+delta',
-        () {
-      // Each step = 5W, baseline adapts quickly, delta=200 never breached
-      final detector = AutoLapDetector(_cfg());
+    test(
+      'gradual increase does not trigger if never exceeds baseline+delta',
+      () {
+        // Each step = 5W, baseline adapts quickly, delta=200 never breached
+        final detector = AutoLapDetector(_cfg());
 
-      for (var t = 0; t < 20; t++) {
-        final ev = detector.processReading(_r(t, power: 100.0 + t * 5));
-        expect(ev, isNull);
-      }
-      expect(detector.currentState, AutoLapState.idle);
-    });
+        for (var t = 0; t < 20; t++) {
+          final ev = detector.processReading(_r(t, power: 100.0 + t * 5));
+          expect(ev, isNull);
+        }
+        expect(detector.currentState, AutoLapState.idle);
+      },
+    );
   });
 
   group('AutoLapDetector — sensor dropout mid-effort', () {
@@ -284,23 +298,26 @@ void main() {
       expect(ended.wasTooShort, false); // endRide skips min duration check
     });
 
-    test('endRide in pendingEnd → EffortEndedEvent with tentative end offset',
-        () {
-      final detector = AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 5));
-      for (var t = 0; t < 5; t++) {
-        detector.processReading(_r(t, power: 100));
-      }
-      detector.processReading(_r(5, power: 400)); // → inEffort
-      for (var t = 6; t < 10; t++) {
-        detector.processReading(_r(t, power: 400));
-      }
-      detector
-          .processReading(_r(10, power: 90)); // → pendingEnd, tentativeEnd=10
+    test(
+      'endRide in pendingEnd → EffortEndedEvent with tentative end offset',
+      () {
+        final detector = AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 5));
+        for (var t = 0; t < 5; t++) {
+          detector.processReading(_r(t, power: 100));
+        }
+        detector.processReading(_r(5, power: 400)); // → inEffort
+        for (var t = 6; t < 10; t++) {
+          detector.processReading(_r(t, power: 400));
+        }
+        detector.processReading(
+          _r(10, power: 90),
+        ); // → pendingEnd, tentativeEnd=10
 
-      final ev = detector.endRide(15);
-      expect(ev, isA<EffortEndedEvent>());
-      expect((ev! as EffortEndedEvent).endOffset, 10); // trimmed to tentative
-    });
+        final ev = detector.endRide(15);
+        expect(ev, isA<EffortEndedEvent>());
+        expect((ev! as EffortEndedEvent).endOffset, 10); // trimmed to tentative
+      },
+    );
   });
 
   group('AutoLapDetector — manualLap in each state', () {
@@ -315,20 +332,22 @@ void main() {
       expect(detector.currentState, AutoLapState.inEffort);
     });
 
-    test('manualLap in pendingStart → EffortStartedEvent (confirm immediately)',
-        () {
-      final detector = AutoLapDetector(_cfg(startConfirm: 5));
-      for (var t = 0; t < 5; t++) {
-        detector.processReading(_r(t, power: 100));
-      }
-      detector.processReading(_r(5, power: 400)); // pendingStart
+    test(
+      'manualLap in pendingStart → EffortStartedEvent (confirm immediately)',
+      () {
+        final detector = AutoLapDetector(_cfg(startConfirm: 5));
+        for (var t = 0; t < 5; t++) {
+          detector.processReading(_r(t, power: 100));
+        }
+        detector.processReading(_r(5, power: 400)); // pendingStart
 
-      final events = detector.manualLap(6);
-      expect(events.length, 1);
-      expect(events[0], isA<EffortStartedEvent>());
-      expect((events[0] as EffortStartedEvent).startOffset, 5); // backdated
-      expect(detector.currentState, AutoLapState.inEffort);
-    });
+        final events = detector.manualLap(6);
+        expect(events.length, 1);
+        expect(events[0], isA<EffortStartedEvent>());
+        expect((events[0] as EffortStartedEvent).startOffset, 5); // backdated
+        expect(detector.currentState, AutoLapState.inEffort);
+      },
+    );
 
     test('manualLap in inEffort → EffortEnded + EffortStarted', () {
       final detector = AutoLapDetector(_cfg(startConfirm: 1));

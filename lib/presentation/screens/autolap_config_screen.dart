@@ -144,29 +144,14 @@ class _AutoLapConfigScreenState extends ConsumerState<AutoLapConfigScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'Preset',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          const Text('Preset', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           SegmentedButton<_Preset>(
             segments: const [
-              ButtonSegment(
-                value: _Preset.shortSprint,
-                label: Text('Short'),
-              ),
-              ButtonSegment(
-                value: _Preset.flying200,
-                label: Text('Flying'),
-              ),
-              ButtonSegment(
-                value: _Preset.teamSprint,
-                label: Text('Team'),
-              ),
-              ButtonSegment(
-                value: _Preset.custom,
-                label: Text('Custom'),
-              ),
+              ButtonSegment(value: _Preset.shortSprint, label: Text('Short')),
+              ButtonSegment(value: _Preset.flying200, label: Text('Flying')),
+              ButtonSegment(value: _Preset.teamSprint, label: Text('Team')),
+              ButtonSegment(value: _Preset.custom, label: Text('Custom')),
             ],
             selected: {_preset},
             onSelectionChanged: (s) => _onPresetChanged(s.first),
@@ -222,10 +207,7 @@ class _AutoLapConfigScreenState extends ConsumerState<AutoLapConfigScreen> {
                 'to confirm end',
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Effort',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          const Text('Effort', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           _field(
             _minEffortCtrl,
@@ -252,9 +234,7 @@ class _AutoLapConfigScreenState extends ConsumerState<AutoLapConfigScreen> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text('Save as Default'),
           ),
@@ -278,9 +258,7 @@ class _AutoLapConfigScreenState extends ConsumerState<AutoLapConfigScreen> {
           helperText: tooltip,
           helperMaxLines: 2,
         ),
-        keyboardType: const TextInputType.numberWithOptions(
-          decimal: true,
-        ),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
         onChanged: (_) => _onFieldEdited(),
         validator: (v) {
           if (v == null || v.trim().isEmpty) {

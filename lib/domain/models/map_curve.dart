@@ -19,8 +19,10 @@ class MapCurve {
   /// Reconstructs a MapCurve from 90 DB rows (one per duration 1–90s).
   factory MapCurve.fromRows(String entityId, List<MapCurveRow> rows) {
     final values = List<double>.filled(90, 0);
-    final flags =
-        List<MapCurveFlags>.generate(90, (_) => const MapCurveFlags());
+    final flags = List<MapCurveFlags>.generate(
+      90,
+      (_) => const MapCurveFlags(),
+    );
 
     for (final row in rows) {
       final i = row.durationSeconds - 1; // duration 1 → index 0

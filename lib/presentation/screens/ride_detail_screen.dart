@@ -25,9 +25,8 @@ class RideDetailScreen extends ConsumerWidget {
     final rangeAsync = ref.watch(historicalRangeProvider);
 
     return rideAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
         appBar: AppBar(),
         body: Center(child: Text('Error: $e')),
@@ -101,10 +100,7 @@ class _DetailViewState extends State<_DetailView> {
 
             // Effort timeline
             if (ride.efforts.isNotEmpty) ...[
-              Text(
-                'Efforts',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('Efforts', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
               EffortTimeline(
                 efforts: ride.efforts,
@@ -157,9 +153,9 @@ class _DetailViewState extends State<_DetailView> {
       await SharePlus.instance.share(ShareParams(uri: Uri.file(path)));
     } on Exception catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 

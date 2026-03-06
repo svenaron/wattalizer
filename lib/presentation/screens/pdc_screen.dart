@@ -102,10 +102,7 @@ class _StatCards extends StatelessWidget {
                 children: [
                   Text(
                     '${d}s',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white54,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.white54),
                   ),
                   const SizedBox(height: 2),
                   Text(

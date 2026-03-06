@@ -33,12 +33,16 @@ class DebugSeeder {
 
     // Start time: days ago + random morning hour (06:00–09:30).
     final now = DateTime.now();
-    final baseDay = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: spec.daysAgo));
+    final baseDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: spec.daysAgo));
     final startHour = 6 + rng.nextInt(4); // 6–9
     final startMinute = rng.nextInt(startHour == 9 ? 31 : 60);
-    final startTime =
-        baseDay.add(Duration(hours: startHour, minutes: startMinute));
+    final startTime = baseDay.add(
+      Duration(hours: startHour, minutes: startMinute),
+    );
     final endTime = startTime.add(Duration(seconds: durationSeconds));
 
     // Place efforts.
@@ -88,8 +92,10 @@ class DebugSeeder {
         );
       }
 
-      final mapCurve =
-          MapCurveCalculator.computeBatch(effortReadings, effortId);
+      final mapCurve = MapCurveCalculator.computeBatch(
+        effortReadings,
+        effortId,
+      );
 
       efforts.add(
         Effort(

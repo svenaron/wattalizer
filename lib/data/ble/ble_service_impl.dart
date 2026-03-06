@@ -41,9 +41,7 @@ class BleServiceImpl implements domain.BleService {
     );
     // universal_ble emits one device at a time. The provider layer
     // accumulates into a list with dedup by deviceId.
-    return UniversalBle.scanStream.map(
-      (device) => [_mapScanResult(device)],
-    );
+    return UniversalBle.scanStream.map((device) => [_mapScanResult(device)]);
   }
 
   domain.DiscoveredDevice _mapScanResult(BleDevice device) {
@@ -85,10 +83,7 @@ class BleServiceImpl implements domain.BleService {
       },
     );
 
-    await UniversalBle.connect(
-      deviceId,
-      timeout: const Duration(seconds: 10),
-    );
+    await UniversalBle.connect(deviceId, timeout: const Duration(seconds: 10));
   }
 
   /// After connection established: discover services, subscribe to all
