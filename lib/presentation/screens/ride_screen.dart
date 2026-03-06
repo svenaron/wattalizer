@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/domain/events/autolap_events.dart';
@@ -5,6 +7,7 @@ import 'package:wattalizer/domain/interfaces/ble_service.dart';
 import 'package:wattalizer/domain/models/effort.dart';
 import 'package:wattalizer/domain/models/ride.dart';
 import 'package:wattalizer/presentation/layout/breakpoints.dart';
+import 'package:wattalizer/presentation/layout/keyboard_shortcuts.dart';
 import 'package:wattalizer/presentation/providers/ble_connection_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_mode_provider.dart';
@@ -22,8 +25,8 @@ class RideScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final rideState = ref.watch(rideSessionProvider);
     return switch (rideState) {
-      RideStateIdle(:final lastRide) => _IdleView(lastRide: lastRide, ref: ref),
-      RideStateActive() => _ActiveView(state: rideState, ref: ref),
+      RideStateIdle(:final lastRide) => _IdleView(lastRide: lastRide),
+      RideStateActive() => _ActiveView(state: rideState),
       RideStateError(:final message) => _ErrorView(message: message),
     };
   }
@@ -33,44 +36,78 @@ class RideScreen extends ConsumerWidget {
 // Idle view
 // ---------------------------------------------------------------------------
 
-class _IdleView extends StatelessWidget {
-  const _IdleView({required this.lastRide, required this.ref});
+class _IdleView extends ConsumerStatefulWidget {
+  const _IdleView({required this.lastRide});
 
   final Ride? lastRide;
-  final WidgetRef ref;
 
+  @override
+  ConsumerState<_IdleView> createState() => _IdleViewState();
+}
+
+class _IdleViewState extends ConsumerState<_IdleView> {
   @override
   Widget build(BuildContext context) {
     final connState = ref.watch(bleConnectionProvider);
     final isConnected = connState.asData?.value == BleConnectionState.connected;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (lastRide != null) ...[
-                _LastRideCard(ride: lastRide!),
-                const SizedBox(height: 32),
-              ],
-              _SensorStatusBar(ref: ref),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: isConnected
-                      ? () => ref.read(rideSessionProvider.notifier).startRide()
-                      : () => showDeviceSheet(context),
-                  child: Text(
-                    isConnected ? 'Start Ride' : 'Connect a sensor to start',
-                    style: const TextStyle(fontSize: 18),
-                  ),
+    return Shortcuts(
+      shortcuts: idleRideShortcuts,
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          StartRideIntent: CallbackAction<StartRideIntent>(
+            onInvoke: (_) {
+              if (isConnected) {
+                unawaited(ref.read(rideSessionProvider.notifier).startRide());
+              } else {
+                showDeviceSheet(context);
+              }
+              return null;
+            },
+          ),
+          OpenDeviceSheetIntent: CallbackAction<OpenDeviceSheetIntent>(
+            onInvoke: (_) {
+              showDeviceSheet(context);
+              return null;
+            },
+          ),
+        },
+        child: Focus(
+          autofocus: true,
+          child: Scaffold(
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.lastRide != null) ...[
+                      _LastRideCard(ride: widget.lastRide!),
+                      const SizedBox(height: 32),
+                    ],
+                    _SensorStatusBar(ref: ref),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isConnected
+                            ? () => ref
+                                .read(rideSessionProvider.notifier)
+                                .startRide()
+                            : () => showDeviceSheet(context),
+                        child: Text(
+                          isConnected
+                              ? 'Start Ride'
+                              : 'Connect a sensor to start',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -82,52 +119,132 @@ class _IdleView extends StatelessWidget {
 // Active view — swipe + orientation routing
 // ---------------------------------------------------------------------------
 
-class _ActiveView extends StatelessWidget {
-  const _ActiveView({required this.state, required this.ref});
+class _ActiveView extends ConsumerStatefulWidget {
+  const _ActiveView({required this.state});
 
   final RideStateActive state;
-  final WidgetRef ref;
 
   @override
+  ConsumerState<_ActiveView> createState() => _ActiveViewState();
+}
+
+class _ActiveViewState extends ConsumerState<_ActiveView> {
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if ((details.primaryVelocity ?? 0).abs() > 200) {
-          ref.read(rideModeProvider.notifier).toggle();
-        }
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final layout = layoutSizeOf(constraints.maxWidth);
-
-          if (layout == LayoutSize.expanded) {
-            // Side-by-side: Focus + Chart, no mode toggle needed.
-            return Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _FocusMode(state: state, ref: ref),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: _ChartMode(state: state, ref: ref, isLandscape: false),
-                ),
-              ],
-            );
-          }
-
-          // Compact or medium: single panel with mode toggle.
-          final orientation = MediaQuery.orientationOf(context);
-          if (orientation == Orientation.landscape) {
-            return _ChartMode(state: state, ref: ref, isLandscape: true);
-          }
-          final mode = ref.watch(rideModeProvider);
-          return mode == RideMode.focus
-              ? _FocusMode(state: state, ref: ref)
-              : _ChartMode(state: state, ref: ref, isLandscape: false);
+    return Shortcuts(
+      shortcuts: activeRideShortcuts,
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          SetFocusModeIntent: CallbackAction<SetFocusModeIntent>(
+            onInvoke: (_) {
+              ref.read(rideModeProvider.notifier).setFocus();
+              return null;
+            },
+          ),
+          SetChartModeIntent: CallbackAction<SetChartModeIntent>(
+            onInvoke: (_) {
+              ref.read(rideModeProvider.notifier).setChart();
+              return null;
+            },
+          ),
+          ManualLapIntent: CallbackAction<ManualLapIntent>(
+            onInvoke: (_) {
+              ref.read(rideSessionProvider.notifier).manualLap();
+              return null;
+            },
+          ),
+          StopRideIntent: CallbackAction<StopRideIntent>(
+            onInvoke: (_) {
+              unawaited(_showStopConfirmation());
+              return null;
+            },
+          ),
+          OpenDeviceSheetIntent: CallbackAction<OpenDeviceSheetIntent>(
+            onInvoke: (_) {
+              showDeviceSheet(context);
+              return null;
+            },
+          ),
         },
+        child: Focus(
+          autofocus: true,
+          child: GestureDetector(
+            onHorizontalDragEnd: (details) {
+              if ((details.primaryVelocity ?? 0).abs() > 200) {
+                ref.read(rideModeProvider.notifier).toggle();
+              }
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final layout = layoutSizeOf(constraints.maxWidth);
+
+                if (layout == LayoutSize.expanded) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _FocusMode(state: widget.state, ref: ref),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: _ChartMode(
+                          state: widget.state,
+                          ref: ref,
+                          isLandscape: false,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                final orientation = MediaQuery.orientationOf(context);
+                if (orientation == Orientation.landscape) {
+                  return _ChartMode(
+                    state: widget.state,
+                    ref: ref,
+                    isLandscape: true,
+                  );
+                }
+                final mode = ref.watch(rideModeProvider);
+                return mode == RideMode.focus
+                    ? _FocusMode(state: widget.state, ref: ref)
+                    : _ChartMode(
+                        state: widget.state,
+                        ref: ref,
+                        isLandscape: false,
+                      );
+              },
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  Future<void> _showStopConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Stop Ride?'),
+        content: const Text('Are you sure you want to end this ride?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Stop'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      unawaited(ref.read(rideSessionProvider.notifier).endRide());
+    }
+    if (mounted) {
+      FocusScope.of(context).requestFocus();
+    }
   }
 }
 
