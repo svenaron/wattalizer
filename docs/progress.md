@@ -56,8 +56,8 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 | # | Item | Status |
 |---|---|---|
-| 20 | Platform scaffolding (macOS/Windows/Linux/Android dirs, entitlements, min window size) | 🔶 Partial | macOS platform added (`flutter create --platforms=macos`). Windows/Linux not yet added. |
-| 21 | Responsive layout (breakpoints, AdaptiveShell, LayoutBuilder in RideScreen) | ✅ Done | `breakpoints.dart` (compact/medium/expanded). AppShell: LayoutBuilder with NavigationBar (compact) ↔ NavigationRail (medium/expanded). RideScreen: LayoutBuilder with side-by-side Focus+Chart at ≥900dp. Device sheet: adaptive bottom sheet (<600dp) ↔ dialog (≥600dp). |
+| 20 | Platform scaffolding (macOS/Windows/Linux/Android dirs, entitlements, min window size) | ✅ Done | macOS (BLE entitlements, min window 400×600), Windows, Linux platforms added. wakelock_plus Linux guard. |
+| 21 | Responsive layout (breakpoints, AdaptiveShell, LayoutBuilder in RideScreen) | ✅ Done | `breakpoints.dart` (compact/medium/expanded). AppShell: NavigationBar (compact) ↔ NavigationRail (medium/expanded). RideScreen: side-by-side Focus+Chart at ≥900dp. Device sheet: bottom sheet (<600dp) ↔ dialog (≥600dp). |
 | 22 | Keyboard shortcuts (intents, shortcut map, Focus widget wiring) | ⬜ Pending |
 | 23 | Desktop interaction polish (mouse cursors, tooltips, hover states, adaptive device dialog) | ⬜ Pending |
 

@@ -239,7 +239,10 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
       return [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16),
-          child: Text('Scanning…', style: TextStyle(color: Colors.white54)),
+          child: Text(
+            'Scanning\u2026',
+            style: TextStyle(color: Colors.white54),
+          ),
         ),
       ];
     }
@@ -364,8 +367,8 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
   String _connectionLabel(BleConnectionState state) {
     return switch (state) {
       BleConnectionState.connected => 'Connected',
-      BleConnectionState.connecting => 'Connecting…',
-      BleConnectionState.reconnecting => 'Reconnecting…',
+      BleConnectionState.connecting => 'Connecting\u2026',
+      BleConnectionState.reconnecting => 'Reconnecting\u2026',
       BleConnectionState.disconnected => 'Disconnected',
     };
   }

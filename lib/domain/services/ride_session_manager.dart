@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
@@ -27,8 +28,10 @@ class RideSessionManager {
   })  : _repository = repository,
         _config = config,
         _onStateChanged = onStateChanged,
-        _enableWakelock = enableWakelock ?? WakelockPlus.enable,
-        _disableWakelock = disableWakelock ?? WakelockPlus.disable;
+        _enableWakelock = enableWakelock ??
+            (Platform.isLinux ? () async {} : WakelockPlus.enable),
+        _disableWakelock = disableWakelock ??
+            (Platform.isLinux ? () async {} : WakelockPlus.disable);
   final RideRepository _repository;
   final AutoLapConfig _config;
   final void Function(RideState) _onStateChanged;

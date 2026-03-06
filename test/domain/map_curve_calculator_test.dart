@@ -23,7 +23,8 @@ void main() {
       expect(curve.values[0], closeTo(800.0, 0.01));
       expect(curve.flags[0].hadNulls, false);
 
-      // 2s best = 800 (window [800,null]: 1 non-null → 800/1=800, hadNulls=true)
+      // 2s best = 800 (window [800,null]: 1 non-null,
+      // 800/1=800, hadNulls=true)
       expect(curve.values[1], closeTo(800.0, 0.01));
       expect(curve.flags[1].hadNulls, true);
 
