@@ -85,10 +85,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
         if (layout == LayoutSize.compact) {
           return Scaffold(
-            body: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
+            body: IndexedStack(index: _selectedIndex, children: _screens),
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedIndex,
               onDestinationSelected: (i) => setState(() => _selectedIndex = i),
@@ -110,10 +107,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               ),
               const VerticalDivider(thickness: 1, width: 1),
               Expanded(
-                child: IndexedStack(
-                  index: _selectedIndex,
-                  children: _screens,
-                ),
+                child: IndexedStack(index: _selectedIndex, children: _screens),
               ),
             ],
           ),
