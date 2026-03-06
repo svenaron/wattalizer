@@ -40,8 +40,9 @@ class LocalRideRepository implements RideRepository {
   }
 
   Future<List<String>> _getTagsForRide(String rideId) async {
-    final rows = await (_db.select(_db.rideTags)
-          ..where((t) => t.rideId.equals(rideId)))
+    final rows = await (_db.select(
+      _db.rideTags,
+    )..where((t) => t.rideId.equals(rideId)))
         .get();
     return rows.map((r) => r.tag).toList();
   }
@@ -75,8 +76,9 @@ class LocalRideRepository implements RideRepository {
     if (effortRows.isEmpty) return [];
 
     final effortIds = effortRows.map((e) => e.id).toList();
-    final curveRows = await (_db.select(_db.mapCurves)
-          ..where((t) => t.effortId.isIn(effortIds)))
+    final curveRows = await (_db.select(
+      _db.mapCurves,
+    )..where((t) => t.effortId.isIn(effortIds)))
         .get();
 
     final curvesByEffort = <String, List<MapCurveRow>>{};
@@ -136,10 +138,13 @@ class LocalRideRepository implements RideRepository {
   Future<void> updateRide(Ride ride) async {
     try {
       await _db.transaction(() async {
-        await (_db.update(_db.rides)..where((t) => t.id.equals(ride.id)))
-            .write(RidesCompanion(notes: Value(ride.notes)));
+        await (_db.update(_db.rides)..where((t) => t.id.equals(ride.id))).write(
+          RidesCompanion(notes: Value(ride.notes)),
+        );
 
-        await (_db.delete(_db.rideTags)..where((t) => t.rideId.equals(ride.id)))
+        await (_db.delete(
+          _db.rideTags,
+        )..where((t) => t.rideId.equals(ride.id)))
             .go();
 
         final tagCompanions = _buildTagCompanions(ride.id, ride.tags);
@@ -157,7 +162,9 @@ class LocalRideRepository implements RideRepository {
   @override
   Future<Ride?> getRide(String id) async {
     try {
-      final row = await (_db.select(_db.rides)..where((t) => t.id.equals(id)))
+      final row = await (_db.select(
+        _db.rides,
+      )..where((t) => t.id.equals(id)))
           .getSingleOrNull();
       if (row == null) return null;
       final tags = await _getTagsForRide(id);
@@ -210,8 +217,9 @@ class LocalRideRepository implements RideRepository {
       if (rows.isEmpty) return [];
 
       final rideIds = rows.map((r) => r.id).toList();
-      final allTagRows = await (_db.select(_db.rideTags)
-            ..where((t) => t.rideId.isIn(rideIds)))
+      final allTagRows = await (_db.select(
+        _db.rideTags,
+      )..where((t) => t.rideId.isIn(rideIds)))
           .get();
       final tagsByRide = <String, List<String>>{};
       for (final tagRow in allTagRows) {
@@ -235,24 +243,32 @@ class LocalRideRepository implements RideRepository {
   Future<void> deleteRide(String id) async {
     try {
       await _db.transaction(() async {
-        final effortRows = await (_db.select(_db.efforts)
-              ..where((t) => t.rideId.equals(id)))
+        final effortRows = await (_db.select(
+          _db.efforts,
+        )..where((t) => t.rideId.equals(id)))
             .get();
         final effortIds = effortRows.map((e) => e.id).toList();
 
         if (effortIds.isNotEmpty) {
-          await (_db.delete(_db.mapCurves)
-                ..where((t) => t.effortId.isIn(effortIds)))
+          await (_db.delete(
+            _db.mapCurves,
+          )..where((t) => t.effortId.isIn(effortIds)))
               .go();
         }
         // Delete ride-level PDC stored in map_curves
         // (rideId used as effortId key)
-        await (_db.delete(_db.mapCurves)..where((t) => t.effortId.equals(id)))
+        await (_db.delete(
+          _db.mapCurves,
+        )..where((t) => t.effortId.equals(id)))
             .go();
 
-        await (_db.delete(_db.readings)..where((t) => t.rideId.equals(id)))
+        await (_db.delete(
+          _db.readings,
+        )..where((t) => t.rideId.equals(id)))
             .go();
-        await (_db.delete(_db.rideTags)..where((t) => t.rideId.equals(id)))
+        await (_db.delete(
+          _db.rideTags,
+        )..where((t) => t.rideId.equals(id)))
             .go();
         await (_db.delete(_db.efforts)..where((t) => t.rideId.equals(id))).go();
         await (_db.delete(_db.rides)..where((t) => t.id.equals(id))).go();
@@ -324,17 +340,21 @@ class LocalRideRepository implements RideRepository {
   Future<void> saveEfforts(String rideId, List<Effort> efforts) async {
     try {
       await _db.transaction(() async {
-        final existing = await (_db.select(_db.efforts)
-              ..where((t) => t.rideId.equals(rideId)))
+        final existing = await (_db.select(
+          _db.efforts,
+        )..where((t) => t.rideId.equals(rideId)))
             .get();
         final existingIds = existing.map((e) => e.id).toList();
 
         if (existingIds.isNotEmpty) {
-          await (_db.delete(_db.mapCurves)
-                ..where((t) => t.effortId.isIn(existingIds)))
+          await (_db.delete(
+            _db.mapCurves,
+          )..where((t) => t.effortId.isIn(existingIds)))
               .go();
         }
-        await (_db.delete(_db.efforts)..where((t) => t.rideId.equals(rideId)))
+        await (_db.delete(
+          _db.efforts,
+        )..where((t) => t.rideId.equals(rideId)))
             .go();
 
         for (final effort in efforts) {
@@ -353,17 +373,21 @@ class LocalRideRepository implements RideRepository {
   Future<void> deleteEfforts(String rideId) async {
     try {
       await _db.transaction(() async {
-        final effortRows = await (_db.select(_db.efforts)
-              ..where((t) => t.rideId.equals(rideId)))
+        final effortRows = await (_db.select(
+          _db.efforts,
+        )..where((t) => t.rideId.equals(rideId)))
             .get();
         final effortIds = effortRows.map((e) => e.id).toList();
 
         if (effortIds.isNotEmpty) {
-          await (_db.delete(_db.mapCurves)
-                ..where((t) => t.effortId.isIn(effortIds)))
+          await (_db.delete(
+            _db.mapCurves,
+          )..where((t) => t.effortId.isIn(effortIds)))
               .go();
         }
-        await (_db.delete(_db.efforts)..where((t) => t.rideId.equals(rideId)))
+        await (_db.delete(
+          _db.efforts,
+        )..where((t) => t.rideId.equals(rideId)))
             .go();
       });
     } catch (e) {
@@ -387,8 +411,9 @@ class LocalRideRepository implements RideRepository {
   @override
   Future<MapCurve?> getMapCurve(String entityId) async {
     try {
-      final rows = await (_db.select(_db.mapCurves)
-            ..where((t) => t.effortId.equals(entityId)))
+      final rows = await (_db.select(
+        _db.mapCurves,
+      )..where((t) => t.effortId.equals(entityId)))
           .get();
       if (rows.isEmpty) return null;
       return MapCurve.fromRows(entityId, rows);
@@ -400,14 +425,16 @@ class LocalRideRepository implements RideRepository {
   @override
   Future<List<MapCurve>> getMapCurvesForRide(String rideId) async {
     try {
-      final effortRows = await (_db.select(_db.efforts)
-            ..where((t) => t.rideId.equals(rideId)))
+      final effortRows = await (_db.select(
+        _db.efforts,
+      )..where((t) => t.rideId.equals(rideId)))
           .get();
       if (effortRows.isEmpty) return [];
 
       final effortIds = effortRows.map((e) => e.id).toList();
-      final curveRows = await (_db.select(_db.mapCurves)
-            ..where((t) => t.effortId.isIn(effortIds)))
+      final curveRows = await (_db.select(
+        _db.mapCurves,
+      )..where((t) => t.effortId.isIn(effortIds)))
           .get();
 
       final curvesByEffort = <String, List<MapCurveRow>>{};
@@ -472,8 +499,9 @@ class LocalRideRepository implements RideRepository {
       }).toList();
 
       final effortIds = provenanceList.map((p) => p.effortId).toList();
-      final curveRows = await (_db.select(_db.mapCurves)
-            ..where((t) => t.effortId.isIn(effortIds)))
+      final curveRows = await (_db.select(
+        _db.mapCurves,
+      )..where((t) => t.effortId.isIn(effortIds)))
           .get();
 
       final curvesByEffort = <String, List<MapCurveRow>>{};
@@ -522,8 +550,9 @@ class LocalRideRepository implements RideRepository {
     try {
       await _db.transaction(() async {
         // Remove any existing PDC for this ride (rideId used as effortId key)
-        await (_db.delete(_db.mapCurves)
-              ..where((t) => t.effortId.equals(rideId)))
+        await (_db.delete(
+          _db.mapCurves,
+        )..where((t) => t.effortId.equals(rideId)))
             .go();
         await _db.batch((b) {
           b.insertAll(_db.mapCurves, curve.toCompanions());
@@ -557,8 +586,9 @@ class LocalRideRepository implements RideRepository {
   @override
   Future<AutoLapConfig> getDefaultConfig() async {
     try {
-      final row = await (_db.select(_db.autolapConfigs)
-            ..where((t) => t.isDefault.equals(true)))
+      final row = await (_db.select(
+        _db.autolapConfigs,
+      )..where((t) => t.isDefault.equals(true)))
           .getSingleOrNull();
       return row != null
           ? AutoLapConfig.fromRow(row)
@@ -619,7 +649,9 @@ class LocalRideRepository implements RideRepository {
   @override
   Future<void> deleteDevice(String deviceId) async {
     try {
-      await (_db.delete(_db.devices)..where((t) => t.deviceId.equals(deviceId)))
+      await (_db.delete(
+        _db.devices,
+      )..where((t) => t.deviceId.equals(deviceId)))
           .go();
     } catch (e) {
       throw DatabaseError(operation: 'delete_device', detail: e.toString());
@@ -629,8 +661,9 @@ class LocalRideRepository implements RideRepository {
   @override
   Future<List<DeviceInfo>> getAutoConnectDevices() async {
     try {
-      final rows = await (_db.select(_db.devices)
-            ..where((t) => t.autoConnect.equals(true)))
+      final rows = await (_db.select(
+        _db.devices,
+      )..where((t) => t.autoConnect.equals(true)))
           .get();
       return rows.map(DeviceInfo.fromRow).toList();
     } catch (e) {

@@ -27,8 +27,11 @@ AutoLapConfig _cfg({
       inEffortTrailingWindow: inWindow,
     );
 
-SensorReading _r(int t, {double? power, int? hr}) =>
-    SensorReading(timestamp: Duration(seconds: t), power: power, heartRate: hr);
+SensorReading _r(int t, {double? power, int? hr}) => SensorReading(
+      timestamp: Duration(seconds: t),
+      power: power,
+      heartRate: hr,
+    );
 
 void main() {
   final manager = EffortManager();

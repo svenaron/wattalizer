@@ -54,10 +54,7 @@ class _TimelinePainter extends CustomPainter {
     // Background bar.
     final bgPaint = Paint()..color = Colors.white12;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Offset.zero & size,
-        const Radius.circular(4),
-      ),
+      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(4)),
       bgPaint,
     );
 

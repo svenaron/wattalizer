@@ -24,10 +24,7 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
-              'Settings',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('Settings', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
             const _AutoLapSection(),
             const Divider(),
@@ -69,9 +66,7 @@ class _AutoLapSection extends ConsumerWidget {
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute<void>(
-          builder: (_) => const AutoLapConfigScreen(),
-        ),
+        MaterialPageRoute<void>(builder: (_) => const AutoLapConfigScreen()),
       ),
     );
   }
@@ -129,14 +124,8 @@ class _MaxPowerSectionState extends ConsumerState<_MaxPowerSection> {
             children: [
               SegmentedButton<bool>(
                 segments: const [
-                  ButtonSegment(
-                    value: false,
-                    label: Text('Auto'),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text('Manual'),
-                  ),
+                  ButtonSegment(value: false, label: Text('Auto')),
+                  ButtonSegment(value: true, label: Text('Manual')),
                 ],
                 selected: {isManual},
                 onSelectionChanged: (s) {
@@ -146,19 +135,11 @@ class _MaxPowerSectionState extends ConsumerState<_MaxPowerSection> {
                     final val = current ?? 1500.0;
                     _ctrl.text = val.round().toString();
                     unawaited(
-                      ref
-                          .read(
-                            maxPowerOverrideProvider.notifier,
-                          )
-                          .set(val),
+                      ref.read(maxPowerOverrideProvider.notifier).set(val),
                     );
                   } else {
                     unawaited(
-                      ref
-                          .read(
-                            maxPowerOverrideProvider.notifier,
-                          )
-                          .set(null),
+                      ref.read(maxPowerOverrideProvider.notifier).set(null),
                     );
                     _ctrl.clear();
                   }
@@ -179,11 +160,7 @@ class _MaxPowerSectionState extends ConsumerState<_MaxPowerSection> {
                       final val = double.tryParse(v);
                       if (val != null && val > 0) {
                         unawaited(
-                          ref
-                              .read(
-                                maxPowerOverrideProvider.notifier,
-                              )
-                              .set(val),
+                          ref.read(maxPowerOverrideProvider.notifier).set(val),
                         );
                       }
                     },
@@ -251,11 +228,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
     }
   }
 
-  void _showImportResults(
-    int imported,
-    int errors, {
-    String? error,
-  }) {
+  void _showImportResults(int imported, int errors, {String? error}) {
     unawaited(
       showDialog<void>(
         context: context,
@@ -327,26 +300,14 @@ class _AppearanceSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const ListTile(
-          leading: Icon(Icons.palette),
-          title: Text('Appearance'),
-        ),
+        const ListTile(leading: Icon(Icons.palette), title: Text('Appearance')),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SegmentedButton<ThemeMode>(
             segments: const [
-              ButtonSegment(
-                value: ThemeMode.system,
-                label: Text('System'),
-              ),
-              ButtonSegment(
-                value: ThemeMode.dark,
-                label: Text('Dark'),
-              ),
-              ButtonSegment(
-                value: ThemeMode.light,
-                label: Text('Light'),
-              ),
+              ButtonSegment(value: ThemeMode.system, label: Text('System')),
+              ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+              ButtonSegment(value: ThemeMode.light, label: Text('Light')),
             ],
             selected: {mode},
             onSelectionChanged: (s) =>

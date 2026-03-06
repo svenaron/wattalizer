@@ -20,10 +20,7 @@ void main() {
     });
 
     test('all-null power yields avgPower=0 and peakPower=0', () {
-      final readings = [
-        _r(0, hr: 150),
-        _r(1, hr: 155),
-      ];
+      final readings = [_r(0, hr: 150), _r(1, hr: 155)];
       final summary = SummaryCalculator.computeEffortSummary(readings);
 
       expect(summary.avgPower, 0.0);
@@ -51,11 +48,7 @@ void main() {
     });
 
     test('mixed null power: only non-null contribute to avg', () {
-      final readings = [
-        _r(0, power: 400),
-        _r(1),
-        _r(2, power: 600),
-      ];
+      final readings = [_r(0, power: 400), _r(1), _r(2, power: 600)];
       final summary = SummaryCalculator.computeEffortSummary(readings);
 
       // avg = (400+600)/2 = 500, not 1000/3
@@ -128,8 +121,10 @@ void main() {
         _r(9, power: 110, hr: 150),
       ];
       final efforts = [_effort(startOffset: 2, endOffset: 5)];
-      final summary =
-          SummaryCalculator.computeRideSummary(allReadings, efforts);
+      final summary = SummaryCalculator.computeRideSummary(
+        allReadings,
+        efforts,
+      );
 
       expect(summary.durationSeconds, 10); // 9 - 0 + 1
       expect(summary.activeDurationSeconds, 4); // offsets 2,3,4,5
@@ -146,10 +141,7 @@ void main() {
     });
 
     test('zero efforts: activeDurationSeconds=0, avgPower=0', () {
-      final allReadings = [
-        _r(0, power: 300),
-        _r(1, power: 400),
-      ];
+      final allReadings = [_r(0, power: 300), _r(1, power: 400)];
       final summary = SummaryCalculator.computeRideSummary(allReadings, []);
 
       expect(summary.activeDurationSeconds, 0);
@@ -166,23 +158,29 @@ void main() {
         _r(2, power: 900), // effort
       ];
       final efforts = [_effort(startOffset: 1, endOffset: 2)];
-      final summary =
-          SummaryCalculator.computeRideSummary(allReadings, efforts);
+      final summary = SummaryCalculator.computeRideSummary(
+        allReadings,
+        efforts,
+      );
 
       expect(summary.maxPower, 2000.0); // from recovery
       expect(summary.avgPower, closeTo(850.0, 0.001)); // active only
     });
 
     test('multiple efforts: active offsets union of all effort ranges', () {
-      final allReadings =
-          List.generate(10, (i) => _r(i, power: 100.0 * (i + 1)));
+      final allReadings = List.generate(
+        10,
+        (i) => _r(i, power: 100.0 * (i + 1)),
+      );
       // Effort 1: t=1..3, Effort 2: t=6..8
       final efforts = [
         _effort(startOffset: 1, endOffset: 3),
         _effort(startOffset: 6, endOffset: 8),
       ];
-      final summary =
-          SummaryCalculator.computeRideSummary(allReadings, efforts);
+      final summary = SummaryCalculator.computeRideSummary(
+        allReadings,
+        efforts,
+      );
 
       expect(summary.activeDurationSeconds, 6); // offsets 1,2,3,6,7,8
       expect(summary.effortCount, 2);
@@ -190,12 +188,7 @@ void main() {
   });
 }
 
-SensorReading _r(
-  int offsetSeconds, {
-  double? power,
-  int? hr,
-  double? cadence,
-}) {
+SensorReading _r(int offsetSeconds, {double? power, int? hr, double? cadence}) {
   return SensorReading(
     timestamp: Duration(seconds: offsetSeconds),
     power: power,

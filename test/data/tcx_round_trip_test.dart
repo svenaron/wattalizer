@@ -75,9 +75,7 @@ void main() {
     });
 
     test('null power round-trips as null (dropout omitted → absent)', () {
-      final readings = [
-        const SensorReading(timestamp: Duration.zero),
-      ];
+      final readings = [const SensorReading(timestamp: Duration.zero)];
       final ride = makeRide([], 1);
 
       final xml = TcxSerializer.serialize(ride, readings);
@@ -130,10 +128,7 @@ void main() {
 
     test('null heartRate round-trips as null', () {
       final readings = [
-        const SensorReading(
-          timestamp: Duration.zero,
-          power: 1000,
-        ),
+        const SensorReading(timestamp: Duration.zero, power: 1000),
       ];
       final ride = makeRide([], 1);
 
@@ -158,10 +153,7 @@ void main() {
 
     test('null cadence round-trips as null', () {
       final readings = [
-        const SensorReading(
-          timestamp: Duration.zero,
-          power: 1000,
-        ),
+        const SensorReading(timestamp: Duration.zero, power: 1000),
       ];
       final ride = makeRide([], 1);
 
@@ -191,10 +183,7 @@ void main() {
           heartRate: 168,
           cadence: 100,
         ),
-        const SensorReading(
-          timestamp: Duration(seconds: 1),
-          heartRate: 170,
-        ),
+        const SensorReading(timestamp: Duration(seconds: 1), heartRate: 170),
         const SensorReading(
           timestamp: Duration(seconds: 2),
           power: 0, // coasting

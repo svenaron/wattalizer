@@ -105,11 +105,7 @@ class TcxSerializer {
         readings.where((r) => r.timestamp.inSeconds >= cursor).toList();
     if (trailingReadings.isNotEmpty) {
       laps.add(
-        _Lap(
-          isActive: false,
-          readings: trailingReadings,
-          startOffset: cursor,
-        ),
+        _Lap(isActive: false, readings: trailingReadings, startOffset: cursor),
       );
     }
 

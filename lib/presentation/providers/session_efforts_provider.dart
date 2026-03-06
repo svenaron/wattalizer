@@ -4,8 +4,9 @@ import 'package:wattalizer/presentation/providers/ride_session_provider.dart';
 
 /// Derived provider: extracts completed efforts from [rideSessionProvider].
 /// Returns an empty list when idle. keepAlive.
-final Provider<List<Effort>> sessionEffortsProvider =
-    Provider<List<Effort>>((ref) {
+final Provider<List<Effort>> sessionEffortsProvider = Provider<List<Effort>>((
+  ref,
+) {
   final rideState = ref.watch(rideSessionProvider);
   return switch (rideState) {
     RideStateActive(:final completedEfforts) => completedEfforts,

@@ -6,8 +6,10 @@ class MapCurveCalculator {
   static MapCurve computeBatch(List<SensorReading> readings, String entityId) {
     final n = readings.length;
     final values = List<double>.filled(90, 0);
-    final flags =
-        List<MapCurveFlags>.generate(90, (_) => const MapCurveFlags());
+    final flags = List<MapCurveFlags>.generate(
+      90,
+      (_) => const MapCurveFlags(),
+    );
 
     if (n == 0) {
       return MapCurve(
@@ -95,8 +97,10 @@ class MapCurveCalculator {
 
     final n = _readings.length;
     final values = List<double>.filled(90, 0);
-    final flags =
-        List<MapCurveFlags>.generate(90, (_) => const MapCurveFlags());
+    final flags = List<MapCurveFlags>.generate(
+      90,
+      (_) => const MapCurveFlags(),
+    );
 
     for (var d = 1; d <= 90; d++) {
       var bestAvg = 0.0;

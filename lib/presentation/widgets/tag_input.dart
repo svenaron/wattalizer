@@ -32,9 +32,7 @@ class _TagInputState extends State<TagInput> {
   }
 
   void _removeTag(String tag) {
-    widget.onTagsChanged(
-      widget.currentTags.where((t) => t != tag).toList(),
-    );
+    widget.onTagsChanged(widget.currentTags.where((t) => t != tag).toList());
   }
 
   @override

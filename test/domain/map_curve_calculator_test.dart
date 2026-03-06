@@ -56,11 +56,7 @@ void main() {
     });
 
     test('all-null readings produce all zeros', () {
-      final readings = [
-        _r(0),
-        _r(1),
-        _r(2),
-      ];
+      final readings = [_r(0), _r(1), _r(2)];
       final curve = MapCurveCalculator.computeBatch(readings, 'test');
       for (final v in curve.values) {
         expect(v, 0.0);
@@ -69,8 +65,10 @@ void main() {
 
     test('output is monotonically non-increasing', () {
       final rng = Random(42);
-      final readings =
-          List.generate(30, (i) => _r(i, power: rng.nextDouble() * 1500));
+      final readings = List.generate(
+        30,
+        (i) => _r(i, power: rng.nextDouble() * 1500),
+      );
       final curve = MapCurveCalculator.computeBatch(readings, 'test');
 
       for (var i = 0; i < 89; i++) {
@@ -84,11 +82,7 @@ void main() {
     });
 
     test('hadNulls flag set when best window contains a null', () {
-      final readings = [
-        _r(0, power: 100),
-        _r(1, power: 800),
-        _r(2),
-      ];
+      final readings = [_r(0, power: 100), _r(1, power: 800), _r(2)];
       final curve = MapCurveCalculator.computeBatch(readings, 'test');
 
       // 1s best = 800 — window [800] has no nulls
@@ -99,7 +93,11 @@ void main() {
 
     test('wasEnforced flag set when monotonicity bumps a value', () {
       final curve = MapCurveCalculator.computeBatch(
-        [_r(0, power: 100), _r(1, power: 100), _r(2, power: 800)],
+        [
+          _r(0, power: 100),
+          _r(1, power: 100),
+          _r(2, power: 800),
+        ],
         'test',
       );
 

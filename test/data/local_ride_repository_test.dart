@@ -223,31 +223,35 @@ void main() {
   // --- deleteRide ---
 
   group('deleteRide', () {
-    test('cascades: removes ride, efforts, readings, map_curves, tags',
-        () async {
-      final effort = _makeEffort('e1', 'r1');
-      final ride = _makeRide('r1', tags: ['sprint'], efforts: [effort]);
-      await _saveRideWithEfforts(repo, ride);
-      await repo.insertReadings('r1', [_makeReading(1), _makeReading(2)]);
+    test(
+      'cascades: removes ride, efforts, readings, map_curves, tags',
+      () async {
+        final effort = _makeEffort('e1', 'r1');
+        final ride = _makeRide('r1', tags: ['sprint'], efforts: [effort]);
+        await _saveRideWithEfforts(repo, ride);
+        await repo.insertReadings('r1', [_makeReading(1), _makeReading(2)]);
 
-      await repo.deleteRide('r1');
+        await repo.deleteRide('r1');
 
-      expect(await repo.getRide('r1'), isNull);
-      expect(await repo.getEfforts('r1'), isEmpty);
-      expect(await repo.getReadings('r1'), isEmpty);
+        expect(await repo.getRide('r1'), isNull);
+        expect(await repo.getEfforts('r1'), isEmpty);
+        expect(await repo.getReadings('r1'), isEmpty);
 
-      // Verify map_curves are gone
-      final remaining = await (db.select(db.mapCurves)
-            ..where((t) => t.effortId.equals('e1')))
-          .get();
-      expect(remaining, isEmpty);
+        // Verify map_curves are gone
+        final remaining = await (db.select(
+          db.mapCurves,
+        )..where((t) => t.effortId.equals('e1')))
+            .get();
+        expect(remaining, isEmpty);
 
-      // Verify tags are gone
-      final tags = await (db.select(db.rideTags)
-            ..where((t) => t.rideId.equals('r1')))
-          .get();
-      expect(tags, isEmpty);
-    });
+        // Verify tags are gone
+        final tags = await (db.select(
+          db.rideTags,
+        )..where((t) => t.rideId.equals('r1')))
+            .get();
+        expect(tags, isEmpty);
+      },
+    );
 
     test('deletes ride-level PDC if present', () async {
       final ride = _makeRide('r1');
@@ -290,8 +294,10 @@ void main() {
 
     test('start/end offset range is inclusive', () async {
       await repo.saveRide(_makeRide('r1'));
-      final readings =
-          List.generate(10, (i) => _makeReading(i, power: i * 10.0));
+      final readings = List.generate(
+        10,
+        (i) => _makeReading(i, power: i * 10.0),
+      );
       await repo.insertReadings('r1', readings);
 
       final range = await repo.getReadings('r1', startOffset: 2, endOffset: 5);
@@ -302,8 +308,10 @@ void main() {
 
     test('batch insert 3600+ readings in a single transaction', () async {
       await repo.saveRide(_makeRide('r1'));
-      final readings =
-          List.generate(3601, (i) => _makeReading(i, power: 200.0 + i % 100));
+      final readings = List.generate(
+        3601,
+        (i) => _makeReading(i, power: 200.0 + i % 100),
+      );
       await repo.insertReadings('r1', readings);
 
       final loaded = await repo.getReadings('r1');
@@ -315,10 +323,7 @@ void main() {
 
   group('saveEfforts', () {
     test('replaces all existing efforts atomically', () async {
-      final ride = _makeRide(
-        'r1',
-        efforts: [_makeEffort('e1', 'r1')],
-      );
+      final ride = _makeRide('r1', efforts: [_makeEffort('e1', 'r1')]);
       await _saveRideWithEfforts(repo, ride);
 
       final newEfforts = [
@@ -333,8 +338,9 @@ void main() {
       expect(loaded.any((e) => e.id == 'e1'), isFalse);
 
       // Old map_curves are gone
-      final oldCurves = await (db.select(db.mapCurves)
-            ..where((t) => t.effortId.equals('e1')))
+      final oldCurves = await (db.select(
+        db.mapCurves,
+      )..where((t) => t.effortId.equals('e1')))
           .get();
       expect(oldCurves, isEmpty);
     });
@@ -454,7 +460,9 @@ void main() {
         _makeRide('r1', efforts: [_makeEffort('e1', 'r1')]),
       );
       // Clear auto-saved curve and save custom one
-      await (db.delete(db.mapCurves)..where((t) => t.effortId.equals('e1')))
+      await (db.delete(
+        db.mapCurves,
+      )..where((t) => t.effortId.equals('e1')))
           .go();
 
       await repo.saveMapCurve('e1', curve);
@@ -515,12 +523,7 @@ void main() {
           _makeEffort('e2', 'r1', effortNumber: 2),
         ],
       );
-      final ride2 = _makeRide(
-        'r2',
-        efforts: [
-          _makeEffort('e3', 'r2'),
-        ],
-      );
+      final ride2 = _makeRide('r2', efforts: [_makeEffort('e3', 'r2')]);
       await _saveRideWithEfforts(repo, ride1);
       await _saveRideWithEfforts(repo, ride2);
 
@@ -661,31 +664,33 @@ void main() {
       expect(configs.first.startDeltaWatts, 180.0);
     });
 
-    test('saveAutoLapConfig clears previous default when setting new one',
-        () async {
-      const config1 = AutoLapConfig(
-        id: 'cfg1',
-        name: 'Config 1',
-        startDeltaWatts: 150,
-        endDeltaWatts: 100,
-        isDefault: true,
-      );
-      const config2 = AutoLapConfig(
-        id: 'cfg2',
-        name: 'Config 2',
-        startDeltaWatts: 200,
-        endDeltaWatts: 150,
-        isDefault: true,
-      );
-      await repo.saveAutoLapConfig(config1);
-      await repo.saveAutoLapConfig(config2);
+    test(
+      'saveAutoLapConfig clears previous default when setting new one',
+      () async {
+        const config1 = AutoLapConfig(
+          id: 'cfg1',
+          name: 'Config 1',
+          startDeltaWatts: 150,
+          endDeltaWatts: 100,
+          isDefault: true,
+        );
+        const config2 = AutoLapConfig(
+          id: 'cfg2',
+          name: 'Config 2',
+          startDeltaWatts: 200,
+          endDeltaWatts: 150,
+          isDefault: true,
+        );
+        await repo.saveAutoLapConfig(config1);
+        await repo.saveAutoLapConfig(config2);
 
-      final defaultConfig = await repo.getDefaultConfig();
-      expect(defaultConfig.id, 'cfg2');
+        final defaultConfig = await repo.getDefaultConfig();
+        expect(defaultConfig.id, 'cfg2');
 
-      // config1 should no longer be default
-      final all = await repo.getAutoLapConfigs();
-      expect(all.firstWhere((c) => c.id == 'cfg1').isDefault, isFalse);
-    });
+        // config1 should no longer be default
+        final all = await repo.getAutoLapConfigs();
+        expect(all.firstWhere((c) => c.id == 'cfg1').isDefault, isFalse);
+      },
+    );
   });
 }

@@ -4,6 +4,7 @@ import 'package:wattalizer/domain/events/autolap_events.dart';
 import 'package:wattalizer/domain/interfaces/ble_service.dart';
 import 'package:wattalizer/domain/models/effort.dart';
 import 'package:wattalizer/domain/models/ride.dart';
+import 'package:wattalizer/presentation/layout/breakpoints.dart';
 import 'package:wattalizer/presentation/providers/ble_connection_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_mode_provider.dart';
@@ -95,8 +96,28 @@ class _ActiveView extends StatelessWidget {
           ref.read(rideModeProvider.notifier).toggle();
         }
       },
-      child: OrientationBuilder(
-        builder: (context, orientation) {
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final layout = layoutSizeOf(constraints.maxWidth);
+
+          if (layout == LayoutSize.expanded) {
+            // Side-by-side: Focus + Chart, no mode toggle needed.
+            return Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _FocusMode(state: state, ref: ref),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: _ChartMode(state: state, ref: ref, isLandscape: false),
+                ),
+              ],
+            );
+          }
+
+          // Compact or medium: single panel with mode toggle.
+          final orientation = MediaQuery.orientationOf(context);
           if (orientation == Orientation.landscape) {
             return _ChartMode(state: state, ref: ref, isLandscape: true);
           }
@@ -152,12 +173,7 @@ class _FocusMode extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                   shadows: pct > 0.95
-                      ? [
-                          const Shadow(
-                            color: Colors.white54,
-                            blurRadius: 20,
-                          ),
-                        ]
+                      ? [const Shadow(color: Colors.white54, blurRadius: 20)]
                       : null,
                 ),
               ),
@@ -285,10 +301,7 @@ class _ChartMode extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _RideControls extends StatefulWidget {
-  const _RideControls({
-    required this.onLap,
-    required this.onStopConfirmed,
-  });
+  const _RideControls({required this.onLap, required this.onStopConfirmed});
 
   final VoidCallback onLap;
   final VoidCallback onStopConfirmed;

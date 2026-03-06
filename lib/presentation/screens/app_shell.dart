@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wattalizer/presentation/layout/breakpoints.dart';
 import 'package:wattalizer/presentation/providers/ride_session_provider.dart';
 import 'package:wattalizer/presentation/screens/history_screen.dart';
 import 'package:wattalizer/presentation/screens/pdc_screen.dart';
@@ -16,51 +17,102 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   int _selectedIndex = 0;
 
+  static const _screens = <Widget>[
+    RideScreen(),
+    HistoryScreen(),
+    PdcScreen(),
+    SettingsScreen(),
+  ];
+
+  static const _destinations = <NavigationDestination>[
+    NavigationDestination(
+      icon: Icon(Icons.pedal_bike_outlined),
+      selectedIcon: Icon(Icons.pedal_bike),
+      label: 'Ride',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.history_outlined),
+      selectedIcon: Icon(Icons.history),
+      label: 'History',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.show_chart_outlined),
+      selectedIcon: Icon(Icons.show_chart),
+      label: 'PDC',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.settings_outlined),
+      selectedIcon: Icon(Icons.settings),
+      label: 'Settings',
+    ),
+  ];
+
+  static const _railDestinations = <NavigationRailDestination>[
+    NavigationRailDestination(
+      icon: Icon(Icons.pedal_bike_outlined),
+      selectedIcon: Icon(Icons.pedal_bike),
+      label: Text('Ride'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.history_outlined),
+      selectedIcon: Icon(Icons.history),
+      label: Text('History'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.show_chart_outlined),
+      selectedIcon: Icon(Icons.show_chart),
+      label: Text('PDC'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.settings_outlined),
+      selectedIcon: Icon(Icons.settings),
+      label: Text('Settings'),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final rideState = ref.watch(rideSessionProvider);
 
-    // During active ride, show RideScreen full-screen with no nav bar.
+    // During active ride, show RideScreen full-screen with no nav.
     if (rideState is RideStateActive) {
       return const RideScreen();
     }
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: const [
-          RideScreen(),
-          HistoryScreen(),
-          PdcScreen(),
-          SettingsScreen(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.pedal_bike_outlined),
-            selectedIcon: Icon(Icons.pedal_bike),
-            label: 'Ride',
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final layout = layoutSizeOf(constraints.maxWidth);
+
+        if (layout == LayoutSize.compact) {
+          return Scaffold(
+            body: IndexedStack(index: _selectedIndex, children: _screens),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+              destinations: _destinations,
+            ),
+          );
+        }
+
+        // Medium or Expanded: NavigationRail on the left.
+        return Scaffold(
+          body: Row(
+            children: [
+              NavigationRail(
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: (i) =>
+                    setState(() => _selectedIndex = i),
+                labelType: NavigationRailLabelType.all,
+                destinations: _railDestinations,
+              ),
+              const VerticalDivider(thickness: 1, width: 1),
+              Expanded(
+                child: IndexedStack(index: _selectedIndex, children: _screens),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.show_chart_outlined),
-            selectedIcon: Icon(Icons.show_chart),
-            label: 'PDC',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

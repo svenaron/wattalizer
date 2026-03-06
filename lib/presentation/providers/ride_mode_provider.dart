@@ -4,8 +4,9 @@ enum RideMode { focus, chart }
 
 /// Controls the Focus ↔ Chart toggle on the active ride screen.
 /// keepAlive — survives navigation during an active ride.
-final rideModeProvider =
-    NotifierProvider<RideModeNotifier, RideMode>(RideModeNotifier.new);
+final rideModeProvider = NotifierProvider<RideModeNotifier, RideMode>(
+  RideModeNotifier.new,
+);
 
 class RideModeNotifier extends Notifier<RideMode> {
   @override

@@ -51,8 +51,10 @@ void main() {
     });
 
     test('InvalidConfigError carries field and reason', () {
-      final err =
-          InvalidConfigError(field: 'minEffortSeconds', reason: 'must be > 0');
+      final err = InvalidConfigError(
+        field: 'minEffortSeconds',
+        reason: 'must be > 0',
+      );
       expect(err.field, 'minEffortSeconds');
       expect(err.reason, 'must be > 0');
       expect(err, isA<AppError>());

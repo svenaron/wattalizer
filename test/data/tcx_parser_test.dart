@@ -240,10 +240,7 @@ void main() {
     });
 
     test('missing <Id> element throws FormatException', () {
-      expect(
-        () => TcxParser.parse(_missingIdXml),
-        throwsFormatException,
-      );
+      expect(() => TcxParser.parse(_missingIdXml), throwsFormatException);
     });
   });
 }

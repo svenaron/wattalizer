@@ -21,8 +21,10 @@ void main() {
       efforts: efforts,
       summary: RideSummary(
         durationSeconds: readingCount,
-        activeDurationSeconds:
-            efforts.fold(0, (sum, e) => sum + (e.endOffset - e.startOffset)),
+        activeDurationSeconds: efforts.fold(
+          0,
+          (sum, e) => sum + (e.endOffset - e.startOffset),
+        ),
         avgPower: 1200,
         maxPower: 1380,
         totalKilojoules: 3.6,
@@ -162,9 +164,9 @@ void main() {
       final doc = XmlDocument.parse(xml);
 
       final tp = doc.findAllElements('Trackpoint').first;
-      final hasWatts = tp.descendants
-          .whereType<XmlElement>()
-          .any((e) => e.name.local == 'Watts');
+      final hasWatts = tp.descendants.whereType<XmlElement>().any(
+            (e) => e.name.local == 'Watts',
+          );
       expect(
         hasWatts,
         false,
@@ -213,18 +215,15 @@ void main() {
     test('power == 0.0 → Watts element present with value 0.0', () {
       final ride = makeRide(efforts: []);
       final coastingReading = [
-        const SensorReading(
-          timestamp: Duration.zero,
-          power: 0,
-        ),
+        const SensorReading(timestamp: Duration.zero, power: 0),
       ];
       final xml = TcxSerializer.serialize(ride, coastingReading);
       final doc = XmlDocument.parse(xml);
 
       final tp = doc.findAllElements('Trackpoint').first;
-      final wattsEl = tp.descendants
-          .whereType<XmlElement>()
-          .firstWhere((e) => e.name.local == 'Watts');
+      final wattsEl = tp.descendants.whereType<XmlElement>().firstWhere(
+            (e) => e.name.local == 'Watts',
+          );
       expect(
         wattsEl.innerText,
         '0.0',
@@ -267,10 +266,9 @@ void main() {
 
     test('trackpoint Time matches ride startTime + offset', () {
       final ride = makeRide(efforts: []);
-      final xml = TcxSerializer.serialize(
-        ride,
-        [const SensorReading(timestamp: Duration(seconds: 5), power: 1000)],
-      );
+      final xml = TcxSerializer.serialize(ride, [
+        const SensorReading(timestamp: Duration(seconds: 5), power: 1000),
+      ]);
       final doc = XmlDocument.parse(xml);
 
       final timeText = doc.findAllElements('Time').first.innerText;

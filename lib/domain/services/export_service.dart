@@ -17,11 +17,7 @@ import 'package:xml/xml.dart';
 class ImportResult {
   // null on success
 
-  const ImportResult({
-    required this.fileName,
-    this.ride,
-    this.error,
-  });
+  const ImportResult({required this.fileName, this.ride, this.error});
   final String fileName;
   final Ride? ride; // null on failure
   final TcxImportError? error;
@@ -140,8 +136,10 @@ class ExportService {
     );
 
     // Compute summary
-    final summary =
-        SummaryCalculator.computeRideSummary(result.readings, efforts);
+    final summary = SummaryCalculator.computeRideSummary(
+      result.readings,
+      efforts,
+    );
 
     return Ride(
       id: rideId,
@@ -187,8 +185,9 @@ class ExportService {
       ];
     }
 
-    final tcxFiles =
-        archive.files.where((f) => f.name.toLowerCase().endsWith('.tcx'));
+    final tcxFiles = archive.files.where(
+      (f) => f.name.toLowerCase().endsWith('.tcx'),
+    );
 
     final results = <ImportResult>[];
     final tempDir = Directory.systemTemp.createTempSync('wattalizer_import_');

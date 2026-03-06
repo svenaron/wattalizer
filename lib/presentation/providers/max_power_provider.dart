@@ -9,8 +9,9 @@ import 'package:wattalizer/presentation/providers/ride_repository_provider.dart'
 /// Falls back to 1500W on first launch (no rides yet).
 /// keepAlive — invalidated by rideSessionProvider when a new ride is saved.
 // (brackets omitted: importing ride_session_provider here would be circular)
-final FutureProvider<double> maxPowerProvider =
-    FutureProvider<double>((ref) async {
+final FutureProvider<double> maxPowerProvider = FutureProvider<double>((
+  ref,
+) async {
   final override = ref.watch(maxPowerOverrideProvider);
   if (override != null) return override;
   final repo = ref.read(rideRepositoryProvider);

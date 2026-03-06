@@ -7,10 +7,7 @@ void main() {
     test('has recorded and importedTcx values', () {
       expect(
         RideSource.values,
-        containsAll([
-          RideSource.recorded,
-          RideSource.importedTcx,
-        ]),
+        containsAll([RideSource.recorded, RideSource.importedTcx]),
       );
     });
   });

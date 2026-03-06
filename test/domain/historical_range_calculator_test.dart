@@ -12,8 +12,10 @@ MapCurveWithProvenance _curve({
   int effortNumber = 1,
 }) {
   final last = values5.last;
-  final full =
-      List<double>.generate(90, (i) => i < values5.length ? values5[i] : last);
+  final full = List<double>.generate(
+    90,
+    (i) => i < values5.length ? values5[i] : last,
+  );
   return MapCurveWithProvenance(
     effortId: effortId,
     rideId: rideId,
@@ -171,30 +173,33 @@ void main() {
       }
     });
 
-    test('provenance inherited when monotonicity enforcement bumps best value',
-        () {
-      // d=0: best=900 (e1), d=1: best=950 (e2)
-      // After enforcement: best[0] bumped to 950, should inherit e2 provenance
-      final e1 = _curve(
-        values5: [900, 800, 700, 600, 500],
-        effortId: 'e1',
-        rideId: 'r1',
-      );
-      final e2 = _curve(
-        values5: [800, 950, 700, 600, 500],
-        effortId: 'e2',
-        rideId: 'r1',
-      );
+    test(
+      'provenance inherited when monotonicity enforcement bumps best value',
+      () {
+        // d=0: best=900 (e1), d=1: best=950 (e2)
+        // After enforcement: best[0] bumped to 950,
+        // should inherit e2 provenance
+        final e1 = _curve(
+          values5: [900, 800, 700, 600, 500],
+          effortId: 'e1',
+          rideId: 'r1',
+        );
+        final e2 = _curve(
+          values5: [800, 950, 700, 600, 500],
+          effortId: 'e2',
+          rideId: 'r1',
+        );
 
-      final result = calculator.compute([e1, e2]);
+        final result = calculator.compute([e1, e2]);
 
-      // Before enforcement: best[0]=900(e1), best[1]=950(e2)
-      // Enforcement: 900 < 950 → best[0] bumped to 950, inherits e2
-      expect(result.best[0].power, closeTo(950, 0.001));
-      expect(result.best[0].effortId, 'e2'); // provenance inherited from e2
-      expect(result.best[1].power, closeTo(950, 0.001));
-      expect(result.best[1].effortId, 'e2');
-    });
+        // Before enforcement: best[0]=900(e1), best[1]=950(e2)
+        // Enforcement: 900 < 950 → best[0] bumped to 950, inherits e2
+        expect(result.best[0].power, closeTo(950, 0.001));
+        expect(result.best[0].effortId, 'e2'); // provenance inherited from e2
+        expect(result.best[1].power, closeTo(950, 0.001));
+        expect(result.best[1].effortId, 'e2');
+      },
+    );
 
     test('durationSeconds in records matches index+1', () {
       final c = _curve(
