@@ -957,6 +957,220 @@ Implementation requires:
 - Both platforms feed the received file path/URI into the existing `TcxParser` import flow — no parser changes needed
 - Desktop platforms (macOS, Windows, Linux) have analogous file association mechanisms and should be handled at the same time
 
+### Phase Detection and Trend Analysis
+
+**Background**
+
+Single-session personal bests — already tracked by Wattalizer’s `HistoricalRange.best` envelope — tell you the ceiling of what an athlete has achieved, but they do not describe the athlete’s *current typical state*. Performance fluctuates from session to session for reasons unrelated to genuine adaptation (fatigue, sleep, motivation, track conditions). A new all-time best in one session may be a genuine upward shift, or it may be an anomaly that will not be reproduced for months. Conversely, an athlete can remain well below their PB for an extended stretch while their typical performance level has meaningfully improved.
+
+The goal of this feature set is to distinguish between normal session-to-session fluctuation and genuine shifts in the underlying level around which performance fluctuates. All three layers build on top of existing `MapCurve` cache data and require no changes to the BLE pipeline, recording flow, or core data models.
+
+The input series for all calculations below is the **per-session best** at a given duration `d`: for each ride, take `max(effort.mapCurve.values[d-1])` across all efforts in that ride. This is already computable from cached `map_curves` rows without reloading raw readings. The series is ordered by `ride.startTime` ascending and indexed as `p[0], p[1], … p[N-1]` where `N` is the number of sessions in the selected span/tag filter.
+
+-----
+
+#### Layer 1 — Exponential Moving Average (EMA)
+
+**Purpose:** Produce a smoothed estimate of the athlete’s current typical performance level at each duration, responsive to recent sessions while dampening noise from single outlier efforts.
+
+**Calculation:**
+
+```
+EMA[0] = p[0]
+EMA[i] = α × p[i] + (1 − α) × EMA[i-1]   for i = 1..N-1
+```
+
+where `α` is the smoothing factor, `0 < α ≤ 1`. Higher `α` = more weight on recent sessions, lower `α` = more historical smoothing. Default `α = 0.3` (approximately equivalent to a 6-session half-life). Expose as a user-configurable setting with sensible labels (e.g., “Responsive / Balanced / Stable” mapping to α = 0.5 / 0.3 / 0.15).
+
+**Bootstrapping:** The first EMA value is the first session’s per-session best. The EMA becomes meaningful after approximately `1/α` sessions (i.e., ~3 sessions at α = 0.3 is the minimum before displaying). Below this threshold, display nothing rather than a misleading early value.
+
+**Monotonicity:** EMA is computed independently per duration `d`. There is no constraint that the resulting EMA curve at any point in time must be non-increasing across durations — unlike `MapCurve.values`, EMA values represent smoothed typical performance at individual durations, not a coherent power-duration curve snapshot. If a monotonically-consistent EMA curve is needed for display (e.g., as an overlay on the PDC chart), apply the same right-to-left monotonicity sweep used by `MapCurveCalculator` across the 90 EMA values at the latest session index.
+
+**Storage:** EMA values are not persisted. They are computed on demand in a new `TrendCalculator` domain class from the ordered series of per-session bests. The `historicalEmaProvider` (new) depends on `historicalRangeProvider` and `emaConfigProvider` (new, stores α). Recomputation is triggered whenever span, tag filter, or α changes.
+
+-----
+
+#### Layer 2 — CUSUM Phase Detection
+
+**Purpose:** Formally detect when the athlete’s typical performance level has shifted to a new phase — i.e., when a sustained deviation from the current reference mean has accumulated beyond a decision threshold. Output is a list of **phase boundaries** (session indices at which a shift was detected) and the **baseline mean** for each resulting phase.
+
+**Inputs (per duration `d`):**
+
+- `p[0..N-1]` — per-session best series (same as EMA input)
+- `μ` — reference mean for the current phase (initialized to the mean of the first `w` sessions, default `w = 5`)
+- `k` — slack parameter controlling sensitivity; filters out fluctuations smaller than `k` watts before accumulating. Recommended default: `k = σ / 2` where `σ` is the standard deviation of the first `w` sessions. Expose as a user-configurable sensitivity slider (Low / Medium / High mapping to `k = σ`, `k = σ/2`, `k = σ/4`).
+- `h` — decision threshold; the cumulative sum must exceed `h` before a phase shift is signaled. Recommended default: `h = 5σ`. Same sensitivity slider as `k`.
+
+**Running CUSUM (two-sided):**
+
+```
+S_pos[0] = 0
+S_neg[0] = 0
+
+For i = 1..N-1:
+  S_pos[i] = max(0, S_pos[i-1] + (p[i] − μ − k))
+  S_neg[i] = min(0, S_neg[i-1] + (p[i] − μ + k))
+
+  if S_pos[i] > h:
+    → upward phase shift detected at session i
+    → record PhasePoint(sessionIndex: i, direction: up, newMean: mean of recent w sessions ending at i)
+    → reset: S_pos[i] = 0, S_neg[i] = 0
+    → update μ to newMean
+
+  if S_neg[i] < −h:
+    → downward phase shift detected at session i
+    → record PhasePoint(sessionIndex: i, direction: down, newMean: mean of recent w sessions ending at i)
+    → reset: S_pos[i] = 0, S_neg[i] = 0
+    → update μ to newMean
+```
+
+**Phase mean calculation:** When a shift is detected at session `i`, the new phase mean `μ_new` is the arithmetic mean of `p[max(0, i−w+1)..i]` (the most recent `w` sessions). This avoids being anchored to the old phase’s data. If fewer than `w` sessions are available since the last shift, use all available sessions since that shift.
+
+**Output — `PhaseDetectionResult`:**
+
+```dart
+class PhasePoint {
+  final int sessionIndex;    // index into the ordered session series
+  final String rideId;       // for UI drill-down
+  final DateTime rideDate;
+  final PhaseDirection direction;  // up | down
+  final double previousMean; // μ before this shift (watts)
+  final double newMean;      // μ after this shift (watts)
+}
+
+class PhaseDetectionResult {
+  final int durationSeconds;         // 1–90
+  final List<PhasePoint> shifts;     // ordered by sessionIndex
+  final List<PhaseMeanSegment> segments; // contiguous phase segments with their mean
+  final double currentPhaseMean;     // mean of the current (last) phase
+}
+
+class PhaseMeanSegment {
+  final int startSessionIndex;
+  final int endSessionIndex;         // inclusive; last segment's end = N-1
+  final double mean;
+  final double stdDev;
+}
+```
+
+**Key durations:** CUSUM is computed for all 90 durations, but the UI surfaces results primarily at the four key durations already used in the app: 1s, 5s, 10s, 30s. Full 90-duration results are available for drill-down.
+
+**Minimum data requirement:** At least `2w` sessions (i.e., 10 sessions at default `w = 5`) before displaying any CUSUM results. Below this, the feature is hidden rather than showing potentially misleading signals.
+
+**Storage:** Phase detection results are not persisted. They are computed on demand by a new `PhaseDetector` domain class. A new `phaseDetectionProvider` (new) depends on `historicalRangeProvider` and `cusumConfigProvider` (new, stores `k`, `h`, `w`). Like EMA, recomputation is triggered on span, tag filter, or config changes.
+
+-----
+
+#### Layer 3 — Variation Monitoring
+
+**Purpose:** Detect when within-session variability across efforts is narrowing over time — a signal of potential rigidity, where the training stimulus is no longer sufficiently varied to stress the system. This complements phase level detection (Layers 1–2) with phase *variability* detection.
+
+**Input series (per duration `d`):** For each session `i`, compute `σ_session[i]` = the standard deviation of `effort.mapCurve.values[d-1]` across all efforts in that session. Sessions with fewer than 3 efforts produce a null entry and are excluded from the series.
+
+**Rolling variability mean:**
+
+```
+V[i] = mean(σ_session[max(0, i−w+1) .. i])   where w = 5 (default)
+```
+
+`V[i]` is the rolling average of within-session spread over the recent `w` sessions. A sustained downward trend in `V` — i.e., V[i] < V[i−w] for several consecutive windows — is the signal of narrowing variability.
+
+**Formal detection (optional, configurable):** Apply the same CUSUM machinery from Layer 2 to the `V` series rather than `p` to formally detect when variability has shifted to a lower phase. In practice, a simple threshold check suffices: flag a “low variability” warning when `V[i] < 0.1 × currentPhaseMean` (i.e., within-session spread is less than 10% of the current typical power level at that duration).
+
+**Output:** A boolean `lowVariabilityWarning` flag per duration, plus the current `V[i]` value. Surfaced only as a subtle UI indicator — not as a primary metric.
+
+-----
+
+#### Data Model Additions
+
+No new database tables are required. All computed values are derived on demand from existing `map_curves` rows. The following new domain classes are added to the domain layer:
+
+```dart
+// lib/domain/trend/
+TrendCalculator      // computes EMA series from per-session best series
+PhaseDetector        // computes CUSUM phase detection result
+VariationMonitor     // computes rolling variability and low-variability flag
+```
+
+New providers in the presentation layer:
+
+```dart
+historicalEmaProvider          // depends on: historicalRangeProvider, emaConfigProvider
+phaseDetectionProvider         // depends on: historicalRangeProvider, cusumConfigProvider
+variationMonitorProvider       // depends on: historicalRangeProvider, cusumConfigProvider
+emaConfigProvider              // α value (user setting, persisted in app_settings)
+cusumConfigProvider            // k, h, w values (user setting, persisted in app_settings)
+showPhaseShiftMarkersProvider  // boolean (user setting, persisted in app_settings)
+```
+
+New `app_settings` keys: `emaAlpha` (double), `cusumSensitivity` (string: ‘low’ | ‘medium’ | ‘high’), `cusumWindowSize` (int), `showPhaseShiftMarkers` (bool, default true).
+
+-----
+
+#### UI Integration
+
+**PDC Screen additions:**
+
+- EMA overlay: a secondary line on the PDC chart rendered behind the best-envelope bold line. Distinct style (dashed or lower-opacity, same hue family as the best envelope line). Labeled “Typical level.” Always rendered when ≥ `1/α` sessions are available — no on-screen toggle.
+- Phase mean segments: horizontal shaded bands spanning the x-axis (date) range for each `PhaseMeanSegment`, rendered at the y-axis level corresponding to that segment’s mean at the selected duration. Always rendered when ≥ `2w` sessions are available — no on-screen toggle. Tapping a phase band shows a tooltip: mean watts, session count, date range.
+- Phase shift markers: vertical lines at the x-axis position of each `PhasePoint`, colored green (upward shift) or amber (downward shift). Tapping shows the `PhasePoint` detail: direction, magnitude of shift (newMean − previousMean in watts and %). Visibility controlled by the `showPhaseShiftMarkersProvider` setting — no on-screen toggle on the PDC screen itself.
+
+**Settings screen additions (new “Trend Analysis” section):**
+
+- EMA smoothing: segmented control labeled “Responsive / Balanced / Stable” mapping to α = 0.5 / 0.3 / 0.15. Default: Balanced.
+- CUSUM sensitivity: segmented control labeled “Low / Medium / High” mapping to `k = σ`, `σ/2`, `σ/4` and `h = 3σ`, `5σ`, `8σ`. Default: Medium.
+- Show phase shift markers: toggle switch. Default: on. Controls `showPhaseShiftMarkersProvider`. When off, EMA and phase bands still render; only the vertical shift marker lines are suppressed.
+
+**History screen additions:**
+
+- Phase shift markers on the session list: a subtle icon on the ride card for rides that are identified as a phase boundary (from the 5s duration CUSUM result, as a representative key duration).
+- Low variability warning: a subtle icon on the ride card when `lowVariabilityWarning` is true for the 5s duration.
+
+**Key duration stat cards (existing, on PDC screen):**
+
+- Add EMA value below the all-time best value. Label: “Typical.” Only shown when ≥ `1/α` sessions exist.
+- Add phase shift delta below EMA when the current phase differs from the previous: “+12W since [date]” or “−8W since [date].”
+
+-----
+
+#### Testing
+
+**Domain unit tests — `TrendCalculator`:**
+
+- Known series with hand-computed EMA at α = 0.3 and α = 0.5
+- First value equals `p[0]`
+- Series of identical values → EMA remains constant
+- Single large spike does not permanently shift EMA
+- Monotonicity sweep on 90-duration EMA snapshot
+
+**Domain unit tests — `PhaseDetector`:**
+
+- Flat series → no shifts detected
+- Series with clear step change (e.g., +100W from session 10 onward) → single upward shift detected at or near session 10 + confirmation lag
+- Downward step change → downward shift detected
+- Two sequential shifts (up then down) → two phase points, correct means
+- Series shorter than `2w` → empty result, no crash
+- `k = 0` with flat series → no spurious signals (S resets to 0 on every session)
+- Correct `rideId` and `rideDate` on `PhasePoint` for drill-down
+
+**Domain unit tests — `VariationMonitor`:**
+
+- Sessions with consistent effort spread → V stable, no warning
+- Sessions where all efforts converge to same power → V trends to 0, warning fires
+- Sessions with < 3 efforts excluded from V series without crash
+- Warning threshold: `V < 0.1 × currentPhaseMean` correctly triggers flag
+
+**Provider tests:**
+
+- Span change → all three providers recompute
+- Tag filter change → all three providers recompute
+- `emaConfigProvider` α change → `historicalEmaProvider` recomputes
+- `cusumConfigProvider` change → `phaseDetectionProvider` and `variationMonitorProvider` recompute
+- PDC screen renders EMA overlay only when ≥ `1/α` sessions available
+- PDC screen renders phase bands only when ≥ `2w` sessions available
+- Phase shift markers hidden when `showPhaseShiftMarkersProvider` is false, visible when true
+- Phase shift markers absent regardless of setting when fewer than `2w` sessions available
+
 ---
 
 ## 12. Dependencies (pubspec.yaml)
