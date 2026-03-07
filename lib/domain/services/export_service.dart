@@ -67,9 +67,26 @@ class ExportService {
       );
     }
 
+    final String xmlContent;
+    try {
+      if (fileName.toLowerCase().endsWith('.gz')) {
+        final compressed = file.readAsBytesSync();
+        final decompressed = const GZipDecoder().decodeBytes(compressed);
+        xmlContent = String.fromCharCodes(decompressed);
+      } else {
+        xmlContent = file.readAsStringSync();
+      }
+    } catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: e.toString(),
+      );
+    }
+
     TcxParseResult result;
     try {
-      result = TcxParser.parse(file.readAsStringSync());
+      result = TcxParser.parse(xmlContent);
     } on XmlException catch (e) {
       throw ImportError(
         fileName: fileName,
@@ -107,9 +124,25 @@ class ExportService {
       );
     }
 
+    final List<int> fitBytes;
+    try {
+      if (fileName.toLowerCase().endsWith('.gz')) {
+        final compressed = file.readAsBytesSync();
+        fitBytes = const GZipDecoder().decodeBytes(compressed);
+      } else {
+        fitBytes = file.readAsBytesSync();
+      }
+    } catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: e.toString(),
+      );
+    }
+
     FitParseResult result;
     try {
-      result = FitParser.parse(file.readAsBytesSync());
+      result = FitParser.parse(fitBytes);
     } on FitException catch (e) {
       throw ImportError(
         fileName: fileName,
