@@ -38,12 +38,8 @@ class MapCurveCalculator {
       var bestHadNulls = false;
 
       if (d > n) {
-        // Duration longer than data — use entire data as single window.
-        final nonNull = countSum[n];
-        if (nonNull > 0) {
-          bestAvg = powerSum[n] / nonNull;
-          bestHadNulls = nonNull < n;
-        }
+        // Duration longer than data — no valid window exists.
+        continue;
       } else {
         // Slide window of size d across all positions.
         for (var end = d; end <= n; end++) {
@@ -107,11 +103,8 @@ class MapCurveCalculator {
       var bestHadNulls = false;
 
       if (d > n) {
-        final nonNull = _countSum[n];
-        if (nonNull > 0) {
-          bestAvg = _powerSum[n] / nonNull;
-          bestHadNulls = nonNull < n;
-        }
+        // Duration longer than data — no valid window exists.
+        continue;
       } else {
         for (var end = d; end <= n; end++) {
           final start = end - d;

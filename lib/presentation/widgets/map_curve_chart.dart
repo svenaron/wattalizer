@@ -103,7 +103,7 @@ class MapCurveChart extends StatelessWidget {
           lineBarsData: lineBars,
           betweenBarsData: betweenBars,
           minX: 1,
-          maxX: 90,
+          maxX: spots.isEmpty ? 90 : spots.last.x,
           minY: 0,
           maxY: maxY,
           gridData: const FlGridData(show: false),

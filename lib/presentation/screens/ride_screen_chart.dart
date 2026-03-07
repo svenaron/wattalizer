@@ -141,6 +141,28 @@ class RideChartMode extends StatelessWidget {
       );
     }
 
+    // Compute X max: highest duration with non-zero data across all curves
+    var maxX = 1.0;
+    for (final e in completedEfforts) {
+      for (var i = e.mapCurve.values.length - 1; i >= 0; i--) {
+        if (e.mapCurve.values[i] > 0) {
+          if (i + 1 > maxX) maxX = (i + 1).toDouble();
+          break;
+        }
+      }
+    }
+    if (liveCurve != null) {
+      for (var i = liveCurve.values.length - 1; i >= 0; i--) {
+        if (liveCurve.values[i] > 0) {
+          if (i + 1 > maxX) maxX = (i + 1).toDouble();
+          break;
+        }
+      }
+    }
+    if (histRange != null && histRange.best.length > maxX) {
+      maxX = histRange.best.length.toDouble();
+    }
+
     // Compute Y max across all data
     var maxY = 100.0;
     if (histRange != null) {
@@ -164,7 +186,7 @@ class RideChartMode extends StatelessWidget {
       lineBarsData: lines,
       betweenBarsData: betweenBars,
       minX: 1,
-      maxX: 90,
+      maxX: maxX,
       minY: 0,
       maxY: maxY,
       gridData: FlGridData(
@@ -231,10 +253,10 @@ class RideChartMode extends StatelessWidget {
     double strokeWidth = 2,
   }) {
     return LineChartBarData(
-      spots: List.generate(
-        values.length,
-        (i) => FlSpot((i + 1).toDouble(), values[i]),
-      ),
+      spots: [
+        for (var i = 0; i < values.length; i++)
+          if (values[i] > 0) FlSpot((i + 1).toDouble(), values[i]),
+      ],
       isCurved: true,
       curveSmoothness: 0.2,
       color: color,
@@ -249,10 +271,11 @@ class RideChartMode extends StatelessWidget {
     required HistoricalRange? histRange,
   }) {
     return LineChartBarData(
-      spots: List.generate(
-        90,
-        (i) => FlSpot((i + 1).toDouble(), liveCurve.values[i]),
-      ),
+      spots: [
+        for (var i = 0; i < liveCurve.values.length; i++)
+          if (liveCurve.values[i] > 0)
+            FlSpot((i + 1).toDouble(), liveCurve.values[i]),
+      ],
       isCurved: true,
       curveSmoothness: 0.2,
       gradient: const LinearGradient(
