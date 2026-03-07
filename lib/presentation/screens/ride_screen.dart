@@ -181,8 +181,10 @@ class _ActiveViewState extends ConsumerState<_ActiveView> {
               builder: (context, constraints) {
                 final layout = layoutSizeOf(constraints.maxWidth);
 
+                final Widget child;
                 if (layout == LayoutSize.expanded) {
-                  return Row(
+                  child = Row(
+                    key: const ValueKey('expanded'),
                     children: [
                       Expanded(
                         flex: 2,
@@ -198,24 +200,38 @@ class _ActiveViewState extends ConsumerState<_ActiveView> {
                       ),
                     ],
                   );
+                } else {
+                  final orientation = MediaQuery.orientationOf(context);
+                  if (orientation == Orientation.landscape) {
+                    child = _ChartMode(
+                      key: const ValueKey('landscape'),
+                      state: widget.state,
+                      ref: ref,
+                      isLandscape: true,
+                    );
+                  } else {
+                    final mode = ref.watch(rideModeProvider);
+                    child = mode == RideMode.focus
+                        ? _FocusMode(
+                            key: const ValueKey('focus'),
+                            state: widget.state,
+                            ref: ref,
+                          )
+                        : _ChartMode(
+                            key: const ValueKey('chart'),
+                            state: widget.state,
+                            ref: ref,
+                            isLandscape: false,
+                          );
+                  }
                 }
 
-                final orientation = MediaQuery.orientationOf(context);
-                if (orientation == Orientation.landscape) {
-                  return _ChartMode(
-                    state: widget.state,
-                    ref: ref,
-                    isLandscape: true,
-                  );
-                }
-                final mode = ref.watch(rideModeProvider);
-                return mode == RideMode.focus
-                    ? _FocusMode(state: widget.state, ref: ref)
-                    : _ChartMode(
-                        state: widget.state,
-                        ref: ref,
-                        isLandscape: false,
-                      );
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  switchInCurve: Curves.easeInOut,
+                  switchOutCurve: Curves.easeInOut,
+                  child: child,
+                );
               },
             ),
           ),
@@ -256,7 +272,7 @@ class _ActiveViewState extends ConsumerState<_ActiveView> {
 // ---------------------------------------------------------------------------
 
 class _FocusMode extends StatelessWidget {
-  const _FocusMode({required this.state, required this.ref});
+  const _FocusMode({required this.state, required this.ref, super.key});
 
   final RideStateActive state;
   final WidgetRef ref;
@@ -381,6 +397,7 @@ class _ChartMode extends StatelessWidget {
     required this.state,
     required this.ref,
     required this.isLandscape,
+    super.key,
   });
 
   final RideStateActive state;
