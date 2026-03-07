@@ -30,14 +30,15 @@ class EffortCard extends StatelessWidget {
           duration: const Duration(milliseconds: 250),
           crossFadeState:
               isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          firstChild: _collapsed(s),
+          firstChild: _collapsed(context, s),
           secondChild: _expanded(s),
         ),
       ),
     );
   }
 
-  Widget _collapsed(EffortSummary s) {
+  Widget _collapsed(BuildContext context, EffortSummary s) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -58,7 +59,10 @@ class EffortCard extends StatelessWidget {
                   '${_dur(s.durationSeconds)}  \u2022  '
                   '${s.avgPower.round()} W avg  \u2022  '
                   '${s.peakPower.round()} W peak',
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -137,7 +141,10 @@ class _StatRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 13,
+            ),
           ),
           Text(value, style: const TextStyle(fontSize: 13)),
         ],

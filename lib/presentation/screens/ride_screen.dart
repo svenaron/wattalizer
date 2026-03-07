@@ -391,12 +391,15 @@ class _ChartMode extends StatelessWidget {
         child: Column(
           children: [
             if (!isLandscape) _ModeSegmentedControl(ref: ref),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Text(
                   'Chart mode\n(coming soon)',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, color: Colors.white54),
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
@@ -462,11 +465,16 @@ class _RideControlsState extends State<_RideControls>
             onPressed: widget.onLap,
             style: ElevatedButton.styleFrom(
               shape: const CircleBorder(),
-              backgroundColor: Colors.white24,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.24),
             ),
-            child: const Text(
+            child: Text(
               'LAP',
-              style: TextStyle(fontSize: 16, color: Colors.white),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
         ),
@@ -489,10 +497,16 @@ class _RideControlsState extends State<_RideControls>
                     CircularProgressIndicator(
                       value: _stopProgress.value,
                       strokeWidth: 4,
-                      color: Colors.redAccent,
-                      backgroundColor: Colors.white24,
+                      color: Theme.of(context).colorScheme.error,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.24),
                     ),
-                    const Icon(Icons.stop, color: Colors.white, size: 32),
+                    Icon(
+                      Icons.stop,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      size: 32,
+                    ),
                   ],
                 );
               },
@@ -556,14 +570,18 @@ class _ModeButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? Colors.white24 : Colors.transparent,
+          color: selected
+              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white38),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : Colors.white54,
+            color: selected
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -591,8 +609,8 @@ class _SensorStatusBar extends StatelessWidget {
       _ => '○ No sensor',
     };
     final color = connState.asData?.value == BleConnectionState.connected
-        ? Colors.greenAccent
-        : Colors.white54;
+        ? Colors.green
+        : Theme.of(context).colorScheme.onSurfaceVariant;
 
     return GestureDetector(
       onTap: () => showDeviceSheet(context),
@@ -616,15 +634,18 @@ class _SmallStat extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.white60),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -642,16 +663,16 @@ class _LastEffortCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white12,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           Text(
             'Effort ${effort.effortNumber}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.white60,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -659,11 +680,17 @@ class _LastEffortCard extends StatelessWidget {
           Text(
             '${s.avgPower.round()} W avg  •  '
             '${s.peakPower.round()} W peak',
-            style: const TextStyle(fontSize: 16, color: Colors.white),
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           Text(
             _formatDuration(s.durationSeconds),
-            style: const TextStyle(fontSize: 14, color: Colors.white70),
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ],
       ),
