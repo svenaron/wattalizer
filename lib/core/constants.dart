@@ -105,3 +105,10 @@ const int kDefaultEndConfirmSeconds = 5;
 const int kDefaultMinEffortSeconds = 3;
 const int kDefaultPreEffortBaselineWindow = 15;
 const int kDefaultInEffortTrailingWindow = 10;
+
+// --- UI / BLE timing constants ---
+
+const double kDefaultMaxPowerWatts = 1500;
+const int kStopButtonHoldMs = 1500;
+const int kBleReconnectTimeoutMinutes = 2;
+const int kBleBackoffCapMs = 30000;

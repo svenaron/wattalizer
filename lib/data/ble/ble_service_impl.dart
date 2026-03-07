@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:universal_ble/universal_ble.dart';
+import 'package:wattalizer/core/constants.dart';
 import 'package:wattalizer/data/ble/csc_parser.dart';
 import 'package:wattalizer/data/ble/hr_parser.dart';
 import 'package:wattalizer/data/ble/power_parser.dart';
@@ -167,7 +168,9 @@ class BleServiceImpl implements domain.BleService {
     final attempts = _reconnectAttempts[deviceId] ?? 0;
     final elapsed = _backoffTotal(attempts);
 
-    if (elapsed > const Duration(minutes: 2).inMilliseconds) {
+    final timeoutMs =
+        const Duration(minutes: kBleReconnectTimeoutMinutes).inMilliseconds;
+    if (elapsed > timeoutMs) {
       _stateControllers[deviceId]?.add(domain.BleConnectionState.disconnected);
       unawaited(_stateControllers[deviceId]?.close() ?? Future.value());
       _stateControllers.remove(deviceId);
@@ -183,7 +186,8 @@ class BleServiceImpl implements domain.BleService {
     _cscParsers[deviceId]?.reset(); // avoid bogus deltas after reconnect
 
     final delay = Duration(
-      milliseconds: math.min(1000 * math.pow(2, attempts).toInt(), 30000),
+      milliseconds:
+          math.min(1000 * math.pow(2, attempts).toInt(), kBleBackoffCapMs),
     );
     _reconnectTimers[deviceId]?.cancel();
     _reconnectTimers[deviceId] = Timer(delay, () {
@@ -195,7 +199,7 @@ class BleServiceImpl implements domain.BleService {
   int _backoffTotal(int attempts) {
     var total = 0;
     for (var i = 0; i < attempts; i++) {
-      total += math.min(1000 * math.pow(2, i).toInt(), 30000);
+      total += math.min(1000 * math.pow(2, i).toInt(), kBleBackoffCapMs);
     }
     return total;
   }
