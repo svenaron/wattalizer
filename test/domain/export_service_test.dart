@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
+import 'package:fit_sdk/fit_sdk.dart' hide File;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wattalizer/core/error_types.dart';
 import 'package:wattalizer/domain/interfaces/ride_repository.dart';
@@ -58,7 +59,6 @@ void main() {
       expect(path, endsWith('.tcx'));
       final content = File(path).readAsStringSync();
       expect(content, contains('<TrainingCenterDatabase'));
-      // TCX uses startTime as the Activity Id, file named by ride.id
       expect(path, contains('r1'));
       expect(content, contains('2024-01-15'));
     });
@@ -88,7 +88,6 @@ void main() {
         final ride = await svc.importTcx(file, config);
 
         expect(ride.source, RideSource.importedTcx);
-        // startTime comes from the TCX file
         expect(ride.startTime.toUtc().year, 2024);
       },
     );
@@ -96,7 +95,6 @@ void main() {
     test(
       'valid TCX → readings re-detected into efforts when above threshold',
       () async {
-        // Config with low threshold so all power readings form an effort
         const lowConfig = AutoLapConfig(
           id: 'low',
           name: 'Low',
@@ -114,7 +112,6 @@ void main() {
 
         final ride = await svc.importTcx(file, lowConfig);
 
-        // We just check that the import succeeds and ride is populated
         expect(ride.id, isNotEmpty);
         expect(ride.summary.readingCount, greaterThan(0));
       },
@@ -126,7 +123,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('importTcx errors', () {
-    test('malformed XML → TcxImportError.malformedXml', () async {
+    test('malformed XML → ImportError.malformedFile', () async {
       final svc = makeService();
       final file = File('${tempDir.path}/bad.tcx')
         ..writeAsStringSync('<not valid xml <<<');
@@ -134,10 +131,10 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>().having(
+          isA<ImportError>().having(
             (e) => e.type,
             'type',
-            ImportErrorType.malformedXml,
+            ImportErrorType.malformedFile,
           ),
         ),
       );
@@ -161,7 +158,7 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>().having(
+          isA<ImportError>().having(
             (e) => e.type,
             'type',
             ImportErrorType.noTrackpoints,
@@ -177,7 +174,7 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>().having(
+          isA<ImportError>().having(
             (e) => e.type,
             'type',
             ImportErrorType.noPowerData,
@@ -188,10 +185,9 @@ void main() {
 
     test('file > 50MB → fileTooLarge', () async {
       final svc = makeService();
-      // Create a file larger than 50MB
       final bigFile = File('${tempDir.path}/big.tcx');
       final sink = bigFile.openWrite();
-      final chunk = List.filled(1024 * 1024, 0x61); // 'a' × 1MB
+      final chunk = List.filled(1024 * 1024, 0x61);
       for (var i = 0; i < 51; i++) {
         sink.add(chunk);
       }
@@ -201,7 +197,7 @@ void main() {
       expect(
         () => svc.importTcx(bigFile, config),
         throwsA(
-          isA<TcxImportError>().having(
+          isA<ImportError>().having(
             (e) => e.type,
             'type',
             ImportErrorType.fileTooLarge,
@@ -212,7 +208,6 @@ void main() {
 
     test('duplicate startTime and readingCount → duplicateRide', () async {
       final startTime = DateTime.utc(2024, 1, 15, 10);
-      // The TCX will have 5 trackpoints; fake a matching existing ride
       final existing = _makeSummaryRow(
         startTime: startTime.subtract(const Duration(milliseconds: 500)),
         readingCount: 5,
@@ -223,7 +218,123 @@ void main() {
       expect(
         () => svc.importTcx(file, config),
         throwsA(
-          isA<TcxImportError>().having(
+          isA<ImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.duplicateRide,
+          ),
+        ),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // importFit — success
+  // ---------------------------------------------------------------------------
+
+  group('importFit success', () {
+    test('valid FIT → Ride with importedFit source', () async {
+      final svc = makeService();
+      final file = _writeFitFile(tempDir, _validFitBytes());
+
+      final ride = await svc.importFit(file, config);
+
+      expect(ride.source, RideSource.importedFit);
+      expect(ride.id, isNotEmpty);
+      expect(ride.summary.readingCount, greaterThan(0));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // importFit — errors
+  // ---------------------------------------------------------------------------
+
+  group('importFit errors', () {
+    test('malformed bytes → ImportError.malformedFile', () async {
+      final svc = makeService();
+      final file = File('${tempDir.path}/bad.fit')
+        ..writeAsBytesSync([0x00, 0x01, 0x02, 0x03]);
+
+      expect(
+        () => svc.importFit(file, config),
+        throwsA(
+          isA<ImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.malformedFile,
+          ),
+        ),
+      );
+    });
+
+    test('FIT with no record messages → noTrackpoints', () async {
+      final svc = makeService();
+      final file = _writeFitFile(tempDir, _fitBytesNoRecords());
+
+      expect(
+        () => svc.importFit(file, config),
+        throwsA(
+          isA<ImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.noTrackpoints,
+          ),
+        ),
+      );
+    });
+
+    test('FIT with no power data → noPowerData', () async {
+      final svc = makeService();
+      final file = _writeFitFile(tempDir, _fitBytesNoPower());
+
+      expect(
+        () => svc.importFit(file, config),
+        throwsA(
+          isA<ImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.noPowerData,
+          ),
+        ),
+      );
+    });
+
+    test('file > 50MB → fileTooLarge', () async {
+      final svc = makeService();
+      final bigFile = File('${tempDir.path}/big.fit');
+      final sink = bigFile.openWrite();
+      final chunk = List.filled(1024 * 1024, 0);
+      for (var i = 0; i < 51; i++) {
+        sink.add(chunk);
+      }
+      await sink.flush();
+      await sink.close();
+
+      expect(
+        () => svc.importFit(bigFile, config),
+        throwsA(
+          isA<ImportError>().having(
+            (e) => e.type,
+            'type',
+            ImportErrorType.fileTooLarge,
+          ),
+        ),
+      );
+    });
+
+    test('duplicate FIT → duplicateRide', () async {
+      final startTime = DateTime.utc(2024, 6, 1, 10);
+      final existing = _makeSummaryRow(
+        startTime: startTime.subtract(const Duration(milliseconds: 500)),
+        readingCount: 5,
+      );
+      final svc = makeService(existingRides: [existing]);
+      final file = _writeFitFile(tempDir, _validFitBytes(startTime: startTime));
+
+      expect(
+        () => svc.importFit(file, config),
+        throwsA(
+          isA<ImportError>().having(
             (e) => e.type,
             'type',
             ImportErrorType.duplicateRide,
@@ -292,6 +403,23 @@ void main() {
       expect(results, hasLength(1));
       expect(results.first.ride, isNotNull);
     });
+
+    test('ZIP with mixed TCX + FIT → both imported', () async {
+      final svc = makeService();
+      final zipFile = _makeZipWithBytes(tempDir, {
+        'ride.tcx': _validTcx().codeUnits,
+        'activity.fit': _validFitBytes(),
+      });
+
+      final results = await svc.importZip(zipFile, config);
+
+      expect(results, hasLength(2));
+      expect(results.every((r) => r.ride != null), isTrue);
+      expect(
+        results.map((r) => r.ride!.source).toSet(),
+        containsAll([RideSource.importedTcx, RideSource.importedFit]),
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -305,7 +433,6 @@ void main() {
 
       final ride = await svc.importTcx(file, config);
 
-      // 2024-01-15T12:00:00+02:00 = 2024-01-15T10:00:00Z
       expect(ride.startTime.isUtc, isTrue);
       expect(ride.startTime.hour, 10);
     });
@@ -322,6 +449,17 @@ void main() {
       final file = _writeTcxFile(tempDir, _validTcx());
 
       await svc.importTcx(file, config);
+
+      expect(repo.saveRideCalls, 1);
+      expect(repo.insertReadingsCalls, 1);
+    });
+
+    test('importFit calls saveRide and insertReadings on success', () async {
+      final repo = _TrackingRepository();
+      final svc = ExportService(repository: repo, exportDirectory: tempDir);
+      final file = _writeFitFile(tempDir, _validFitBytes());
+
+      await svc.importFit(file, config);
 
       expect(repo.saveRideCalls, 1);
       expect(repo.insertReadingsCalls, 1);
@@ -486,12 +624,85 @@ String _tcxWithOffset() => '''
 </TrainingCenterDatabase>''';
 
 // =============================================================================
+// FIT binary fixtures
+// =============================================================================
+
+// FIT epoch offset: 1989-12-31T00:00:00Z = 631065600 seconds since Unix epoch
+const _fitEpoch = 631065600;
+
+/// Builds a minimal valid FIT activity with 5 record messages containing power.
+List<int> _validFitBytes({DateTime? startTime}) {
+  final ts = startTime ?? DateTime.utc(2024, 6, 1, 10);
+  final baseFitTs = ts.millisecondsSinceEpoch ~/ 1000 - _fitEpoch;
+
+  final encoder = Encode()..open();
+
+  final fileIdMesg = Mesg.fromMesgNum(MesgNum.fileId)..setFieldValue(0, 4);
+  encoder
+    ..writeMesgDefinition(MesgDefinition.fromMesg(fileIdMesg))
+    ..writeMesg(fileIdMesg);
+
+  for (var i = 0; i < 5; i++) {
+    final rec = Mesg.fromMesgNum(MesgNum.record)
+      ..setFieldValue(253, baseFitTs + i) // timestamp
+      ..setFieldValue(7, 300 + i * 10) // power
+      ..setFieldValue(3, 150 + i) // heart_rate
+      ..setFieldValue(4, 90); // cadence
+    encoder
+      ..writeMesgDefinition(MesgDefinition.fromMesg(rec))
+      ..writeMesg(rec);
+  }
+
+  return encoder.close();
+}
+
+/// FIT file with record messages but no power field.
+List<int> _fitBytesNoPower() {
+  final baseFitTs =
+      DateTime.utc(2024, 6, 2, 10).millisecondsSinceEpoch ~/ 1000 - _fitEpoch;
+
+  final encoder = Encode()..open();
+
+  final fileIdMesg = Mesg.fromMesgNum(MesgNum.fileId)..setFieldValue(0, 4);
+  encoder
+    ..writeMesgDefinition(MesgDefinition.fromMesg(fileIdMesg))
+    ..writeMesg(fileIdMesg);
+
+  for (var i = 0; i < 3; i++) {
+    final rec = Mesg.fromMesgNum(MesgNum.record)
+      ..setFieldValue(253, baseFitTs + i)
+      ..setFieldValue(3, 150); // heart_rate only
+    encoder
+      ..writeMesgDefinition(MesgDefinition.fromMesg(rec))
+      ..writeMesg(rec);
+  }
+
+  return encoder.close();
+}
+
+/// FIT file with only a file ID message (no record messages).
+List<int> _fitBytesNoRecords() {
+  final encoder = Encode()..open();
+  final fileIdMesg = Mesg.fromMesgNum(MesgNum.fileId)..setFieldValue(0, 4);
+  encoder
+    ..writeMesgDefinition(MesgDefinition.fromMesg(fileIdMesg))
+    ..writeMesg(fileIdMesg);
+  return encoder.close();
+}
+
+// =============================================================================
 // File helpers
 // =============================================================================
 
 File _writeTcxFile(Directory dir, String xml) {
   final file = File('${dir.path}/${DateTime.now().microsecondsSinceEpoch}.tcx')
     ..writeAsStringSync(xml);
+  return file;
+}
+
+File _writeFitFile(Directory dir, List<int> bytes) {
+  final file = File('${dir.path}/${DateTime.now().microsecondsSinceEpoch}.fit')
+    ..writeAsBytesSync(bytes);
   return file;
 }
 

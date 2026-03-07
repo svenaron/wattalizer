@@ -3,7 +3,7 @@ import 'package:wattalizer/data/database/database.dart';
 import 'package:wattalizer/domain/models/effort.dart';
 import 'package:wattalizer/domain/models/ride_summary.dart';
 
-enum RideSource { recorded, importedTcx }
+enum RideSource { recorded, importedTcx, importedFit }
 
 class Ride {
   const Ride({
@@ -25,9 +25,11 @@ class Ride {
       endTime: row.endTime,
       tags: tags,
       notes: row.notes,
-      source: row.source == 'recorded'
-          ? RideSource.recorded
-          : RideSource.importedTcx,
+      source: switch (row.source) {
+        'recorded' => RideSource.recorded,
+        'imported_fit' => RideSource.importedFit,
+        _ => RideSource.importedTcx,
+      },
       autoLapConfigId: row.autoLapConfigId,
       efforts: efforts,
       summary: RideSummary(
@@ -51,7 +53,11 @@ class Ride {
       startTime: startTime,
       endTime: Value.absentIfNull(endTime),
       notes: Value.absentIfNull(notes),
-      source: source == RideSource.recorded ? 'recorded' : 'imported_tcx',
+      source: switch (source) {
+        RideSource.recorded => 'recorded',
+        RideSource.importedTcx => 'imported_tcx',
+        RideSource.importedFit => 'imported_fit',
+      },
       autoLapConfigId: Value.absentIfNull(autoLapConfigId),
       durationSeconds: summary.durationSeconds,
       activeDurationSeconds: summary.activeDurationSeconds,

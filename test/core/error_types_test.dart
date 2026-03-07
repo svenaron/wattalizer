@@ -23,8 +23,8 @@ void main() {
       expect(err, isA<AppError>());
     });
 
-    test('TcxImportError carries fileName, type, and optional detail', () {
-      final err = TcxImportError(
+    test('ImportError carries fileName, type, and optional detail', () {
+      final err = ImportError(
         fileName: 'ride.tcx',
         type: ImportErrorType.noPowerData,
       );
@@ -34,13 +34,13 @@ void main() {
       expect(err, isA<AppError>());
     });
 
-    test('TcxImportError detail may be provided', () {
-      final err = TcxImportError(
-        fileName: 'bad.tcx',
-        type: ImportErrorType.malformedXml,
-        detail: 'unclosed tag at line 42',
+    test('ImportError detail may be provided', () {
+      final err = ImportError(
+        fileName: 'bad.fit',
+        type: ImportErrorType.malformedFile,
+        detail: 'unexpected end of data',
       );
-      expect(err.detail, 'unclosed tag at line 42');
+      expect(err.detail, 'unexpected end of data');
     });
 
     test('ExportError carries rideId and reason', () {
@@ -67,7 +67,7 @@ void main() {
       expect(
         ImportErrorType.values,
         containsAll([
-          ImportErrorType.malformedXml,
+          ImportErrorType.malformedFile,
           ImportErrorType.noTrackpoints,
           ImportErrorType.noPowerData,
           ImportErrorType.duplicateRide,
@@ -84,7 +84,7 @@ void main() {
         BleConnectionError() => 'ble_connection',
         BleScanError() => 'ble_scan',
         DatabaseError() => 'database',
-        TcxImportError() => 'tcx_import',
+        ImportError() => 'import',
         ExportError() => 'export',
         InvalidConfigError() => 'invalid_config',
       };

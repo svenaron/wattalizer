@@ -202,7 +202,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
   Future<void> _import() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['tcx', 'zip'],
+      allowedExtensions: ['tcx', 'fit', 'zip'],
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
@@ -233,13 +233,16 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
         if (mounted) _showDetailedResults(results);
       } else {
         try {
-          final ride = await export.importTcx(ioFile, config);
+          final ride = ext == 'fit'
+              ? await export.importFit(ioFile, config)
+              : await export.importTcx(ioFile, config);
+
           if (mounted) {
             _showDetailedResults(
               [ImportResult(fileName: file.name, ride: ride)],
             );
           }
-        } on TcxImportError catch (e) {
+        } on ImportError catch (e) {
           if (mounted) {
             _showDetailedResults([ImportResult(fileName: file.name, error: e)]);
           }
@@ -251,9 +254,9 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
         _showDetailedResults([
           ImportResult(
             fileName: file.path!.split(Platform.pathSeparator).last,
-            error: TcxImportError(
+            error: ImportError(
               fileName: file.path!.split(Platform.pathSeparator).last,
-              type: ImportErrorType.malformedXml,
+              type: ImportErrorType.malformedFile,
               detail: e.toString(),
             ),
           ),
@@ -270,7 +273,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
   }
 
   String _errorLabel(ImportErrorType type) => switch (type) {
-        ImportErrorType.malformedXml => 'Malformed XML',
+        ImportErrorType.malformedFile => 'Invalid file format',
         ImportErrorType.noTrackpoints => 'No trackpoints',
         ImportErrorType.noPowerData => 'No power data',
         ImportErrorType.duplicateRide => 'Duplicate (already imported)',
@@ -376,7 +379,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
     final progress = _zipProgress;
     final subtitle = progress != null
         ? 'Importing... ${progress.done}/${progress.total}'
-        : 'TCX or ZIP files';
+        : 'TCX, FIT, or ZIP files';
 
     return ListTile(
       leading: const Icon(Icons.file_upload),

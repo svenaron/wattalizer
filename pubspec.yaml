@@ -10,6 +10,7 @@ dependencies:
   archive: ^4.0.9
   drift: ^2.15.0
   file_picker: ^10.3.10
+  fit_sdk: ^0.3.0
   fl_chart: ^1.1.1
   flutter:
     sdk: flutter
