@@ -27,7 +27,6 @@ void main() {
         ),
         avgPower: 1200,
         maxPower: 1380,
-        totalKilojoules: 3.6,
         readingCount: readingCount,
         effortCount: efforts.length,
       ),
@@ -46,7 +45,6 @@ void main() {
         durationSeconds: end - start,
         avgPower: 1200,
         peakPower: 1380,
-        totalKilojoules: 3.6,
       ),
       mapCurve: MapCurve(
         entityId: 'effort-$number',

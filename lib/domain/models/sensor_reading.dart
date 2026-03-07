@@ -22,7 +22,6 @@ class SensorReading {
     this.minTorqueMagnitude,
     this.topDeadSpotAngle,
     this.bottomDeadSpotAngle,
-    this.accumulatedEnergy,
     this.rrIntervals,
   });
 
@@ -45,7 +44,6 @@ class SensorReading {
       minTorqueMagnitude: row.minTorqueMagnitude,
       topDeadSpotAngle: row.topDeadSpotAngle,
       bottomDeadSpotAngle: row.bottomDeadSpotAngle,
-      accumulatedEnergy: row.accumulatedEnergy,
       rrIntervals: row.rrIntervals != null
           ? (jsonDecode(row.rrIntervals!) as List).cast<int>()
           : null,
@@ -72,7 +70,6 @@ class SensorReading {
       minTorqueMagnitude: Value.absentIfNull(minTorqueMagnitude),
       topDeadSpotAngle: Value.absentIfNull(topDeadSpotAngle),
       bottomDeadSpotAngle: Value.absentIfNull(bottomDeadSpotAngle),
-      accumulatedEnergy: Value.absentIfNull(accumulatedEnergy),
       rrIntervals: Value.absentIfNull(
         rrIntervals != null ? jsonEncode(rrIntervals) : null,
       ),
@@ -97,7 +94,6 @@ class SensorReading {
     Object? minTorqueMagnitude = _sentinel,
     Object? topDeadSpotAngle = _sentinel,
     Object? bottomDeadSpotAngle = _sentinel,
-    Object? accumulatedEnergy = _sentinel,
     Object? rrIntervals = _sentinel,
   }) {
     return SensorReading(
@@ -140,9 +136,6 @@ class SensorReading {
       bottomDeadSpotAngle: bottomDeadSpotAngle == _sentinel
           ? this.bottomDeadSpotAngle
           : bottomDeadSpotAngle as int?,
-      accumulatedEnergy: accumulatedEnergy == _sentinel
-          ? this.accumulatedEnergy
-          : accumulatedEnergy as int?,
       rrIntervals: rrIntervals == _sentinel
           ? this.rrIntervals
           : rrIntervals as List<int>?,
@@ -166,7 +159,6 @@ class SensorReading {
   final int? minTorqueMagnitude;
   final int? topDeadSpotAngle;
   final int? bottomDeadSpotAngle;
-  final int? accumulatedEnergy;
   final List<int>? rrIntervals;
 }
 

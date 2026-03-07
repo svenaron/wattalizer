@@ -32,7 +32,6 @@ class LocalRideRepository implements RideRepository {
       avgHeartRate: row.avgHeartRate,
       maxHeartRate: row.maxHeartRate,
       avgCadence: row.avgCadence,
-      totalKilojoules: row.totalKilojoules,
       avgLeftRightBalance: row.avgLeftRightBalance,
       readingCount: row.readingCount,
       effortCount: row.effortCount,

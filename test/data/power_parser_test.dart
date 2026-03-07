@@ -69,9 +69,9 @@ void main() {
     });
 
     test('all optional fields present', () {
-      // Flags: 0x0FE5 = bits 0,2,5,6,7,8,9,10,11
+      // Flags: 0x07E5 = bits 0,2,5,6,7,8,9,10 (no accumulated energy)
       final bytes = [
-        0xE5, 0x0F, // flags
+        0xE5, 0x07, // flags
         0xE8, 0x03, // power: 1000W
         0x64, // balance: 50.0%
         0x10, 0x27, // acc torque: 10000
@@ -84,7 +84,6 @@ void main() {
         0x00, 0x5A, 0xB4, // extreme angles (3 bytes packed, skipped)
         0x0A, 0x00, // top dead spot: 10°
         0xB4, 0x00, // bottom dead spot: 180°
-        0x05, 0x00, // acc energy: 5 kJ
       ];
       final data = PowerParser.parse(bytes);
 
@@ -99,7 +98,6 @@ void main() {
       expect(data.minTorqueMagnitude, 100);
       expect(data.topDeadSpotAngle, 10);
       expect(data.bottomDeadSpotAngle, 180);
-      expect(data.accumulatedEnergy, 5);
     });
   });
 }

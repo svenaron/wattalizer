@@ -24,7 +24,6 @@ void main() {
         activeDurationSeconds: 0,
         avgPower: 0,
         maxPower: 0,
-        totalKilojoules: 0,
         readingCount: readingCount,
         effortCount: efforts.length,
       ),
@@ -43,7 +42,6 @@ void main() {
         durationSeconds: end - start,
         avgPower: 500,
         peakPower: 800,
-        totalKilojoules: 1,
       ),
       mapCurve: MapCurve(
         entityId: 'effort-rt-1',

@@ -144,27 +144,6 @@ class PowerParser {
       offset += 2;
     }
 
-    // Bit 11: Accumulated Energy present
-    int? energy;
-    if (flags & 0x0800 != 0) {
-      if (offset + 1 >= bytes.length) {
-        return _buildPartial(
-          power,
-          balance,
-          accTorque,
-          crankRevs,
-          crankTime,
-          maxForce,
-          minForce,
-          maxTorque,
-          minTorque,
-          topAngle: topAngle,
-          bottomAngle: bottomAngle,
-        );
-      }
-      energy = _readU16(bytes, offset);
-    }
-
     return PowerData(
       instantaneousPower: power,
       pedalBalance: balance,
@@ -177,7 +156,6 @@ class PowerParser {
       minTorqueMagnitude: minTorque,
       topDeadSpotAngle: topAngle,
       bottomDeadSpotAngle: bottomAngle,
-      accumulatedEnergy: energy,
     );
   }
 

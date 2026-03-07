@@ -40,7 +40,6 @@ Effort _makeEffort(
       durationSeconds: 10,
       avgPower: 500,
       peakPower: 800,
-      totalKilojoules: 5,
     ),
     mapCurve: _makeMapCurve(id),
   );
@@ -65,7 +64,6 @@ Ride _makeRide(
       activeDurationSeconds: 600,
       avgPower: 250,
       maxPower: 1200,
-      totalKilojoules: 150,
       readingCount: 3600,
       effortCount: 3,
     ),

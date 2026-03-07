@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -61,7 +61,10 @@ class AppDatabase extends _$AppDatabase {
           );
         },
         onUpgrade: (m, from, to) async {
-          // Future migrations go here
+          for (final entity in allSchemaEntities.toList().reversed) {
+            await m.drop(entity);
+          }
+          await m.createAll();
         },
       );
 }

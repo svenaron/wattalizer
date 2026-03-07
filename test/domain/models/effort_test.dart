@@ -38,7 +38,6 @@ EffortSummary _emptySummary() => const EffortSummary(
       durationSeconds: 15,
       avgPower: 0,
       peakPower: 0,
-      totalKilojoules: 0,
     );
 
 MapCurve _emptyMapCurve(String id) => MapCurve(

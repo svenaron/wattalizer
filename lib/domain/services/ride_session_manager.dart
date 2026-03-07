@@ -149,7 +149,6 @@ class RideSessionManager {
       minTorqueMagnitude: lastPower?.minTorqueMagnitude,
       topDeadSpotAngle: lastPower?.topDeadSpotAngle,
       bottomDeadSpotAngle: lastPower?.bottomDeadSpotAngle,
-      accumulatedEnergy: lastPower?.accumulatedEnergy,
       rrIntervals: lastHr?.rrIntervals,
     );
   }

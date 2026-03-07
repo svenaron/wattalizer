@@ -74,7 +74,6 @@ RideSummary _emptySummary() => const RideSummary(
       activeDurationSeconds: 0,
       avgPower: 0,
       maxPower: 0,
-      totalKilojoules: 0,
       readingCount: 0,
       effortCount: 0,
     );

@@ -106,10 +106,6 @@ class EffortCard extends StatelessWidget {
               label: 'Avg Cadence',
               value: '${s.avgCadence!.round()} rpm',
             ),
-          _StatRow(
-            label: 'Energy',
-            value: '${s.totalKilojoules.toStringAsFixed(1)} kJ',
-          ),
           if (s.restSincePrevious != null)
             _StatRow(
               label: 'Rest since prev',

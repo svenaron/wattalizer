@@ -3,8 +3,6 @@ import 'package:wattalizer/domain/models/device_info.dart';
 // --- BLE parsed data types ---
 
 class PowerData {
-  // kJ
-
   const PowerData({
     required this.instantaneousPower,
     this.pedalBalance,
@@ -17,7 +15,6 @@ class PowerData {
     this.minTorqueMagnitude,
     this.topDeadSpotAngle,
     this.bottomDeadSpotAngle,
-    this.accumulatedEnergy,
   });
   final int instantaneousPower; // Watts, signed 16-bit
   final double? pedalBalance; // left leg %, 0-100
@@ -30,7 +27,6 @@ class PowerData {
   final int? minTorqueMagnitude;
   final int? topDeadSpotAngle; // degrees
   final int? bottomDeadSpotAngle;
-  final int? accumulatedEnergy;
 }
 
 class HeartRateData {
