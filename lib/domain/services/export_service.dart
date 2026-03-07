@@ -190,9 +190,10 @@ class ExportService {
       ];
     }
 
-    final tcxFiles = archive.files
-        .where((f) => f.name.toLowerCase().endsWith('.tcx'))
-        .toList();
+    final tcxFiles = archive.files.where((f) {
+      final n = f.name.toLowerCase();
+      return f.isFile && (n.endsWith('.tcx') || n.endsWith('.tcx.gz'));
+    }).toList();
     final total = tcxFiles.length;
 
     final results = <ImportResult>[];
@@ -203,10 +204,18 @@ class ExportService {
       for (var i = 0; i < tcxFiles.length; i++) {
         final entry = tcxFiles[i];
         final entryName = entry.name.split('/').last;
-        final outStream = OutputFileStream('${tempDir.path}/$entryName');
-        entry.writeContent(outStream);
-        outStream.closeSync();
-        final tempFile = File('${tempDir.path}/$entryName');
+        final File tempFile;
+        if (entryName.toLowerCase().endsWith('.gz')) {
+          final bytes =
+              const GZipDecoder().decodeBytes(entry.content as List<int>);
+          final tempName = entryName.replaceAll('.gz', '');
+          tempFile = File('${tempDir.path}/$tempName')..writeAsBytesSync(bytes);
+        } else {
+          final outStream = OutputFileStream('${tempDir.path}/$entryName');
+          entry.writeContent(outStream);
+          outStream.closeSync();
+          tempFile = File('${tempDir.path}/$entryName');
+        }
 
         try {
           final ride = await importTcx(tempFile, config);
