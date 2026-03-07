@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/domain/interfaces/ride_repository.dart';
@@ -51,13 +53,22 @@ class HistoryScreen extends ConsumerWidget {
 // Ride list
 // ---------------------------------------------------------------------------
 
-class _RideList extends ConsumerWidget {
+class _RideList extends ConsumerStatefulWidget {
   const _RideList({required this.rides});
 
   final List<RideSummaryRow> rides;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_RideList> createState() => _RideListState();
+}
+
+class _RideListState extends ConsumerState<_RideList> {
+  final Set<String> _dismissedIds = {};
+
+  @override
+  Widget build(BuildContext context) {
+    final rides =
+        widget.rides.where((r) => !_dismissedIds.contains(r.id)).toList();
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: rides.length,
@@ -76,10 +87,14 @@ class _RideList extends ConsumerWidget {
             ),
           ),
           confirmDismiss: (_) => _confirmDelete(context),
-          onDismissed: (_) async {
+          onDismissed: (_) {
+            setState(() => _dismissedIds.add(row.id));
             final repo = ref.read(rideRepositoryProvider);
-            await repo.deleteRide(row.id);
-            ref.invalidate(rideListProvider);
+            unawaited(
+              repo
+                  .deleteRide(row.id)
+                  .then((_) => ref.invalidate(rideListProvider)),
+            );
           },
           child: _RideCard(row: row),
         );
