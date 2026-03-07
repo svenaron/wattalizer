@@ -18,6 +18,9 @@ class BleServiceImpl implements domain.BleService {
   static const _hrMeasurementUuid = '00002a37-0000-1000-8000-00805f9b34fb';
   static const _cscMeasurementUuid = '00002a5b-0000-1000-8000-00805f9b34fb';
 
+  // --- Scan accumulator (dedup by deviceId, reset on each scan) ---
+  final Map<String, domain.DiscoveredDevice> _scanAccumulator = {};
+
   // --- Per-device state ---
   final Map<String, StreamSubscription<bool>> _connectionSubs = {};
   final Map<String, StreamController<domain.BleConnectionState>>
@@ -31,6 +34,7 @@ class BleServiceImpl implements domain.BleService {
 
   @override
   Stream<List<domain.DiscoveredDevice>> scanForDevices() {
+    _scanAccumulator.clear();
     unawaited(
       UniversalBle.startScan(
         scanFilter: ScanFilter(
@@ -40,9 +44,11 @@ class BleServiceImpl implements domain.BleService {
         // BLE not available (e.g. iOS simulator) — silently ignore.
       }),
     );
-    // universal_ble emits one device at a time. The provider layer
-    // accumulates into a list with dedup by deviceId.
-    return UniversalBle.scanStream.map((device) => [_mapScanResult(device)]);
+    return UniversalBle.scanStream.map((device) {
+      final mapped = _mapScanResult(device);
+      _scanAccumulator[mapped.deviceId] = mapped;
+      return _scanAccumulator.values.toList();
+    });
   }
 
   domain.DiscoveredDevice _mapScanResult(BleDevice device) {
@@ -56,6 +62,7 @@ class BleServiceImpl implements domain.BleService {
 
   @override
   void stopScan() {
+    _scanAccumulator.clear();
     unawaited(UniversalBle.stopScan());
   }
 

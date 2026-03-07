@@ -78,7 +78,7 @@ class _PdcContent extends StatelessWidget {
       entityId: 'pdc',
       values: range.best.map((r) => r.power).toList(),
       flags: List.generate(90, (_) => const MapCurveFlags()),
-      computedAt: DateTime.now(),
+      computedAt: DateTime.now().toUtc(),
     );
   }
 }

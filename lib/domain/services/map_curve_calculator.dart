@@ -16,7 +16,7 @@ class MapCurveCalculator {
         entityId: entityId,
         values: values,
         flags: flags,
-        computedAt: DateTime.now(),
+        computedAt: DateTime.now().toUtc(),
       );
     }
 
