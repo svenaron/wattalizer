@@ -26,6 +26,7 @@ class EffortCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onToggle,
+        mouseCursor: SystemMouseCursors.click,
         child: AnimatedCrossFade(
           duration: const Duration(milliseconds: 250),
           crossFadeState:

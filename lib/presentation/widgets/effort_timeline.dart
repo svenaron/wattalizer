@@ -18,29 +18,33 @@ class EffortTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     if (totalDurationSeconds <= 0) return const SizedBox.shrink();
 
-    return GestureDetector(
-      onTapUp: onEffortTapped == null
-          ? null
-          : (details) {
-              final frac = details.localPosition.dx / context.size!.width;
-              final offset = (frac * totalDurationSeconds).round();
-              for (final e in efforts) {
-                if (offset >= e.startOffset &&
-                    offset <= e.startOffset + e.summary.durationSeconds) {
-                  onEffortTapped!(e.effortNumber);
-                  return;
+    return MouseRegion(
+      cursor:
+          onEffortTapped != null ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
+        onTapUp: onEffortTapped == null
+            ? null
+            : (details) {
+                final frac = details.localPosition.dx / context.size!.width;
+                final offset = (frac * totalDurationSeconds).round();
+                for (final e in efforts) {
+                  if (offset >= e.startOffset &&
+                      offset <= e.startOffset + e.summary.durationSeconds) {
+                    onEffortTapped!(e.effortNumber);
+                    return;
+                  }
                 }
-              }
-            },
-      child: CustomPaint(
-        painter: _TimelinePainter(
-          efforts: efforts,
-          totalDuration: totalDurationSeconds,
-          bgColor: Theme.of(
-            context,
-          ).colorScheme.onSurface.withValues(alpha: 0.12),
+              },
+        child: CustomPaint(
+          painter: _TimelinePainter(
+            efforts: efforts,
+            totalDuration: totalDurationSeconds,
+            bgColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.12),
+          ),
+          child: const SizedBox(height: 40, width: double.infinity),
         ),
-        child: const SizedBox(height: 40, width: double.infinity),
       ),
     );
   }
