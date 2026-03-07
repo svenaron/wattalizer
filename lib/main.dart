@@ -11,6 +11,22 @@ import 'package:wattalizer/presentation/providers/theme_mode_provider.dart';
 import 'package:wattalizer/presentation/screens/app_shell.dart';
 
 void main() async {
+  // Suppress a known Flutter macOS embedding bug where modifier keys (Meta/Cmd)
+  // get stuck in "pressed" state after the app loses focus mid-keypress (e.g.
+  // Cmd+Tab to another app). Flutter never receives the key-up, so when Cmd is
+  // pressed again on return it fires an assertion in HardwareKeyboard.
+  //
+  // The assertion only fires in debug builds and the app recovers correctly, so
+  // this is purely console noise. Filtering by string is fragile but it's the
+  // only app-level workaround available without using @visibleForTesting APIs.
+  // Track: https://github.com/flutter/flutter/issues/131674
+  final originalOnError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    final isStuckKeyAssertion = details.exception is AssertionError &&
+        details.exceptionAsString().contains('KeyDownEvent is dispatched');
+    if (!isStuckKeyAssertion) originalOnError?.call(details);
+  };
+
   WidgetsFlutterBinding.ensureInitialized();
   final db = await AppDatabase.open();
   final repo = LocalRideRepository(db);
