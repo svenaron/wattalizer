@@ -74,6 +74,6 @@ Tracks completion status per item in the implementation order (spec-supplement �
 | # | Item | Status |
 |---|---|---|
 | 24 | Orientation handling + desktop window resize transitions | ✅ Done | AnimatedSwitcher (300ms, easeInOut) in AppShell (nav rail ↔ bottom nav) and RideScreen _ActiveView (expanded/landscape/focus/chart). |
-| 25 | Animations and transitions | ⬜ Pending |
+| 25 | Animations and transitions | ✅ Done | Focus mode: `AnimatedContainer` bg color + 700ms pulse overlay at >95% max power. Chart mode: full `fl_chart` impl (gradient live curve, faded previous efforts, historical band, record-breaking glow dots, key duration stats, power/HR/cadence header, landscape side panel). Sparkline widget (`CustomPainter`) + `ridePdcProvider` wired into history cards. |
 | 26 | Re-detection preview | ⬜ Pending |
 | 27 | Bulk import UI | ⬜ Pending |
