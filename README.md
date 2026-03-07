@@ -1,5 +1,7 @@
 # Wattalizer
 
+[![Build & Test](https://github.com/svenaron/wattalizer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/svenaron/wattalizer/actions/workflows/ci.yml)
+
 A cross-platform mobile app for track cyclists and sprint athletes to analyze power output during sprint interval training.
 
 ## Features
