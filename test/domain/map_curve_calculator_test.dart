@@ -44,9 +44,9 @@ void main() {
       expect(curve.values[5], closeTo(500.0, 0.01));
       expect(curve.flags[5].hadNulls, true);
 
-      // Durations 7..90: d > n, use entire data → same as 6s = 500
+      // Durations 7..90: d > n, no valid window → 0
       for (var i = 6; i < 90; i++) {
-        expect(curve.values[i], closeTo(500.0, 0.01));
+        expect(curve.values[i], 0.0);
       }
     });
 
@@ -118,9 +118,9 @@ void main() {
       for (var i = 0; i < 10; i++) {
         expect(curve.values[i], closeTo(400.0, 0.001));
       }
-      // Duration 11..90: d > n, uses all 10 readings → still 400
+      // Duration 11..90: d > n, no valid window → 0
       for (var i = 10; i < 90; i++) {
-        expect(curve.values[i], closeTo(400.0, 0.001));
+        expect(curve.values[i], 0.0);
       }
     });
 
@@ -203,8 +203,8 @@ void main() {
       final curve = calc.updateLive(_r(0, power: 500), 'test');
       // After reset, only 1 reading: 1s best = 500
       expect(curve.values[0], closeTo(500.0, 0.001));
-      // 2s: d > n, uses all data → 500
-      expect(curve.values[1], closeTo(500.0, 0.001));
+      // 2s: d > n, no valid window → 0
+      expect(curve.values[1], 0.0);
     });
 
     test('live output is monotonically non-increasing after each call', () {
