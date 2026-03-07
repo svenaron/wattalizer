@@ -215,7 +215,6 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
         activeDurationSeconds: s.activeDurationSeconds,
         avgPower: s.avgPower,
         maxPower: s.maxPower,
-        totalKilojoules: s.totalKilojoules,
         readingCount: s.readingCount,
         effortCount: _preview.length,
         avgHeartRate: s.avgHeartRate,

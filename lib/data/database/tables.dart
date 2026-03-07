@@ -16,7 +16,6 @@ class Rides extends Table {
   IntColumn get avgHeartRate => integer().nullable()();
   IntColumn get maxHeartRate => integer().nullable()();
   RealColumn get avgCadence => real().nullable()();
-  RealColumn get totalKilojoules => real()();
   RealColumn get avgLeftRightBalance => real().nullable()();
   IntColumn get readingCount => integer()();
   IntColumn get effortCount => integer()();
@@ -48,7 +47,6 @@ class Efforts extends Table {
   IntColumn get avgHeartRate => integer().nullable()();
   IntColumn get maxHeartRate => integer().nullable()();
   RealColumn get avgCadence => real().nullable()();
-  RealColumn get totalKilojoules => real()();
   RealColumn get avgLeftRightBalance => real().nullable()();
   IntColumn get restSincePrevious => integer().nullable()();
 
@@ -89,7 +87,6 @@ class Readings extends Table {
   IntColumn get minTorqueMagnitude => integer().nullable()();
   IntColumn get topDeadSpotAngle => integer().nullable()();
   IntColumn get bottomDeadSpotAngle => integer().nullable()();
-  IntColumn get accumulatedEnergy => integer().nullable()();
   TextColumn get rrIntervals => text().nullable()(); // JSON: "[710, 690]"
 }
 

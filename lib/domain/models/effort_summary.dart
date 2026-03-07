@@ -3,7 +3,6 @@ class EffortSummary {
     required this.durationSeconds,
     required this.avgPower,
     required this.peakPower,
-    required this.totalKilojoules,
     this.avgHeartRate,
     this.maxHeartRate,
     this.avgCadence,
@@ -17,7 +16,6 @@ class EffortSummary {
   final int? avgHeartRate;
   final int? maxHeartRate;
   final double? avgCadence;
-  final double totalKilojoules;
   final double? avgLeftRightBalance;
   final int? restSincePrevious;
 
@@ -29,7 +27,6 @@ class EffortSummary {
       avgHeartRate: avgHeartRate,
       maxHeartRate: maxHeartRate,
       avgCadence: avgCadence,
-      totalKilojoules: totalKilojoules,
       avgLeftRightBalance: avgLeftRightBalance,
       restSincePrevious: restSincePrevious ?? this.restSincePrevious,
     );

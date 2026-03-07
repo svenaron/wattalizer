@@ -249,9 +249,6 @@ class TcxSerializer {
     if (r.bottomDeadSpotAngle != null) {
       attrs['bottomDeadSpotAngle'] = r.bottomDeadSpotAngle.toString();
     }
-    if (r.accumulatedEnergy != null) {
-      attrs['accumulatedEnergy'] = r.accumulatedEnergy.toString();
-    }
     if (r.rrIntervals != null && r.rrIntervals!.isNotEmpty) {
       attrs['rrIntervals'] = r.rrIntervals!.join(',');
     }

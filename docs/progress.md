@@ -41,7 +41,7 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 **Phase 4 total (Items 15-20): 278 tests passing — Phase 4 COMPLETE**
 
-**Phase 5 total: 280 tests passing (Item 26 adds no new tests — pure presentation)**
+**Phase 5 total: 279 tests passing (energy fields removed)**
 
 ## Phase 4: Presentation
 

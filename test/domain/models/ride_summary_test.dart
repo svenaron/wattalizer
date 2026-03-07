@@ -9,7 +9,6 @@ void main() {
         activeDurationSeconds: 120,
         avgPower: 450,
         maxPower: 1200,
-        totalKilojoules: 54,
         readingCount: 3600,
         effortCount: 3,
       );
@@ -25,7 +24,6 @@ void main() {
         activeDurationSeconds: 0,
         avgPower: 0,
         maxPower: 0,
-        totalKilojoules: 0,
         readingCount: 0,
         effortCount: 0,
       );
@@ -41,7 +39,6 @@ void main() {
         activeDurationSeconds: 60,
         avgPower: 400,
         maxPower: 800,
-        totalKilojoules: 24,
         readingCount: 60,
         effortCount: 1,
         avgHeartRate: 175,

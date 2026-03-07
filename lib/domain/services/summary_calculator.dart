@@ -12,7 +12,6 @@ class SummaryCalculator {
         durationSeconds: 0,
         avgPower: 0,
         peakPower: 0,
-        totalKilojoules: 0,
       );
     }
 
@@ -60,7 +59,6 @@ class SummaryCalculator {
       avgHeartRate: hrCount > 0 ? (hrSum / hrCount).round() : null,
       maxHeartRate: hrCount > 0 ? maxHr : null,
       avgCadence: cadCount > 0 ? cadSum / cadCount : null,
-      totalKilojoules: avgPower * duration / 1000.0,
       avgLeftRightBalance: lrCount > 0 ? lrSum / lrCount : null,
     );
   }
@@ -69,7 +67,6 @@ class SummaryCalculator {
   ///
   /// CRITICAL DISTINCTION:
   /// - avgPower, avgHeartRate, avgCadence, avgLeftRightBalance,
-  ///   totalKilojoules,
   ///   activeDurationSeconds → computed from ACTIVE EFFORT READINGS ONLY
   /// - maxPower, maxHeartRate → computed from ENTIRE RIDE (all readings)
   /// - durationSeconds, readingCount → computed from ENTIRE RIDE
@@ -83,7 +80,6 @@ class SummaryCalculator {
         activeDurationSeconds: 0,
         avgPower: 0,
         maxPower: 0,
-        totalKilojoules: 0,
         readingCount: 0,
         effortCount: efforts.length,
       );
@@ -149,7 +145,6 @@ class SummaryCalculator {
       avgHeartRate: hrCount > 0 ? (hrSum / hrCount).round() : null,
       maxHeartRate: maxHr > 0 ? maxHr : null,
       avgCadence: cadCount > 0 ? cadSum / cadCount : null,
-      totalKilojoules: avgPower * activeDuration / 1000.0,
       avgLeftRightBalance: lrCount > 0 ? lrSum / lrCount : null,
       readingCount: allReadings.length,
       effortCount: efforts.length,

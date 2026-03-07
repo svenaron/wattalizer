@@ -13,7 +13,6 @@ void main() {
       expect(summary.durationSeconds, 0);
       expect(summary.avgPower, 0.0);
       expect(summary.peakPower, 0.0);
-      expect(summary.totalKilojoules, 0.0);
       expect(summary.avgHeartRate, isNull);
       expect(summary.maxHeartRate, isNull);
       expect(summary.avgCadence, isNull);
@@ -44,7 +43,6 @@ void main() {
       expect(summary.peakPower, 900.0);
       expect(summary.avgHeartRate, 166); // round(165.5)
       expect(summary.maxHeartRate, 172);
-      expect(summary.totalKilojoules, closeTo(825.0 * 4 / 1000, 0.001));
     });
 
     test('mixed null power: only non-null contribute to avg', () {
@@ -55,17 +53,6 @@ void main() {
       expect(summary.avgPower, closeTo(500.0, 0.001));
       expect(summary.peakPower, 600.0);
       expect(summary.durationSeconds, 3);
-    });
-
-    test('kJ = avgPower * duration / 1000', () {
-      final readings = [
-        _r(0, power: 1000),
-        _r(1, power: 1000),
-        _r(2, power: 1000),
-      ];
-      final summary = SummaryCalculator.computeEffortSummary(readings);
-
-      expect(summary.totalKilojoules, closeTo(3.0, 0.001)); // 1000*3/1000
     });
 
     test('no HR readings → avgHeartRate and maxHeartRate are null', () {
@@ -135,7 +122,6 @@ void main() {
         166,
       ); // active only: (155+165+170+172)/4=165.5 → 166
       expect(summary.maxHeartRate, 172); // entire ride
-      expect(summary.totalKilojoules, closeTo(825.0 * 4 / 1000, 0.001));
       expect(summary.readingCount, 10);
       expect(summary.effortCount, 1);
     });
@@ -146,7 +132,6 @@ void main() {
 
       expect(summary.activeDurationSeconds, 0);
       expect(summary.avgPower, 0.0);
-      expect(summary.totalKilojoules, 0.0);
       expect(summary.maxPower, 400.0); // still scans entire ride
       expect(summary.durationSeconds, 2);
     });
@@ -211,7 +196,6 @@ Effort _effort({required int startOffset, required int endOffset}) {
       durationSeconds: 0,
       avgPower: 0,
       peakPower: 0,
-      totalKilojoules: 0,
     ),
     mapCurve: MapCurve(
       entityId: 'e',

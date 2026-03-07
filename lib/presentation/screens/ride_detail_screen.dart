@@ -262,10 +262,6 @@ class _SummaryGrid extends StatelessWidget {
           _Stat(label: 'Max HR', value: '${s.maxHeartRate} bpm'),
         if (s.avgCadence != null)
           _Stat(label: 'Cadence', value: '${s.avgCadence!.round()} rpm'),
-        _Stat(
-          label: 'Energy',
-          value: '${s.totalKilojoules.toStringAsFixed(1)} kJ',
-        ),
         _Stat(label: 'Efforts', value: '${s.effortCount}'),
       ],
     );
