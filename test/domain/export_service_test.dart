@@ -93,6 +93,21 @@ void main() {
     );
 
     test(
+      'importTcx: .tcx.gz file is decompressed and imported',
+      () async {
+        final svc = makeService();
+        final gzBytes = const GZipEncoder().encode(_validTcx().codeUnits);
+        final file = File('${tempDir.path}/ride.tcx.gz')
+          ..writeAsBytesSync(gzBytes);
+
+        final ride = await svc.importTcx(file, config);
+
+        expect(ride.source, RideSource.importedTcx);
+        expect(ride.startTime.toUtc().year, 2024);
+      },
+    );
+
+    test(
       'valid TCX → readings re-detected into efforts when above threshold',
       () async {
         const lowConfig = AutoLapConfig(
@@ -248,6 +263,21 @@ void main() {
   // ---------------------------------------------------------------------------
   // importFit — errors
   // ---------------------------------------------------------------------------
+
+  group('importFit gz', () {
+    test('importFit: .fit.gz file is decompressed and imported', () async {
+      final svc = makeService();
+      final gzBytes = const GZipEncoder().encode(_validFitBytes());
+      final file = File('${tempDir.path}/activity.fit.gz')
+        ..writeAsBytesSync(gzBytes);
+
+      final ride = await svc.importFit(file, config);
+
+      expect(ride.source, RideSource.importedFit);
+      expect(ride.id, isNotEmpty);
+      expect(ride.summary.readingCount, greaterThan(0));
+    });
+  });
 
   group('importFit errors', () {
     test('malformed bytes → ImportError.malformedFile', () async {

@@ -202,7 +202,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
   Future<void> _import() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['tcx', 'fit', 'zip'],
+      allowedExtensions: ['tcx', 'fit', 'zip', 'gz'],
     );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
@@ -218,9 +218,9 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
       final configAsync = ref.read(autoLapConfigProvider);
       final config = configAsync.value ?? AutoLapConfig.shortSprint();
       final ioFile = File(file.path!);
-      final ext = file.path!.split('.').last.toLowerCase();
+      final name = file.name.toLowerCase();
 
-      if (ext == 'zip') {
+      if (name.endsWith('.zip')) {
         final results = await export.importZip(
           ioFile,
           config,
@@ -233,7 +233,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
         if (mounted) _showDetailedResults(results);
       } else {
         try {
-          final ride = ext == 'fit'
+          final ride = name.endsWith('.fit') || name.endsWith('.fit.gz')
               ? await export.importFit(ioFile, config)
               : await export.importTcx(ioFile, config);
 
@@ -379,7 +379,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
     final progress = _zipProgress;
     final subtitle = progress != null
         ? 'Importing... ${progress.done}/${progress.total}'
-        : 'TCX, FIT, or ZIP files';
+        : 'TCX, FIT, ZIP, or gzipped files';
 
     return ListTile(
       leading: const Icon(Icons.file_upload),
