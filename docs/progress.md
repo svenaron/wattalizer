@@ -59,7 +59,7 @@ Tracks completion status per item in the implementation order (spec-supplement �
 | 20 | Platform scaffolding (macOS/Windows/Linux/Android dirs, entitlements, min window size) | ✅ Done | macOS (BLE entitlements, min window 400×600), Windows, Linux platforms added. wakelock_plus Linux guard. |
 | 21 | Responsive layout (breakpoints, AdaptiveShell, LayoutBuilder in RideScreen) | ✅ Done | `breakpoints.dart` (compact/medium/expanded). AppShell: NavigationBar (compact) ↔ NavigationRail (medium/expanded). RideScreen: side-by-side Focus+Chart at ≥900dp. Device sheet: bottom sheet (<600dp) ↔ dialog (≥600dp). |
 | 22 | Keyboard shortcuts (intents, shortcut map, Focus widget wiring) | ✅ Done | 6 Intent classes, 2 shortcut maps (active/idle). `_IdleView`/`_ActiveView` converted to `ConsumerStatefulWidget`, wrapped with `Shortcuts`+`Actions`+`Focus`. Escape→stop confirmation dialog. Focus restored after dialogs. |
-| 23 | Desktop interaction polish (mouse cursors, tooltips, hover states, adaptive device dialog) | ⬜ Pending |
+| 23 | Desktop interaction polish (mouse cursors, tooltips, hover states, adaptive device dialog) | ✅ Done | Tooltips with shortcut hints on ride controls (LAP, STOP, Start, mode buttons, sensor bar). MouseRegion click cursors on STOP, sensor bar, device list items, effort timeline. InkWell with hover ripple on mode buttons. mouseCursor on effort cards. |
 
 ## Other
 

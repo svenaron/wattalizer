@@ -186,56 +186,59 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
           ? (connState.asData?.value ?? BleConnectionState.disconnected)
           : BleConnectionState.disconnected;
 
-      return ListTile(
-        leading: _ServiceIcons(services: device.supportedServices),
-        title: Text(device.displayName),
-        subtitle: Text(
-          isThisConnected ? _connectionLabel(stateValue) : 'Saved',
-          style: TextStyle(
-            color: stateValue == BleConnectionState.connected
-                ? Colors.green
-                : Theme.of(context).colorScheme.onSurfaceVariant,
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: ListTile(
+          leading: _ServiceIcons(services: device.supportedServices),
+          title: Text(device.displayName),
+          subtitle: Text(
+            isThisConnected ? _connectionLabel(stateValue) : 'Saved',
+            style: TextStyle(
+              color: stateValue == BleConnectionState.connected
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!device.autoConnect)
-              Tooltip(
-                message: 'Auto-connect off',
-                child: Icon(
-                  Icons.link_off,
-                  size: 16,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                ),
-              ),
-            PopupMenuButton<_DeviceAction>(
-              icon: const Icon(Icons.more_vert, size: 20),
-              onSelected: (action) => _onDeviceAction(action, device),
-              itemBuilder: (_) => [
-                const PopupMenuItem(
-                  value: _DeviceAction.rename,
-                  child: Text('Rename'),
-                ),
-                PopupMenuItem(
-                  value: _DeviceAction.toggleAutoConnect,
-                  child: Text(
-                    device.autoConnect
-                        ? 'Disable auto-connect'
-                        : 'Enable auto-connect',
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!device.autoConnect)
+                Tooltip(
+                  message: 'Auto-connect off',
+                  child: Icon(
+                    Icons.link_off,
+                    size: 16,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.38),
                   ),
                 ),
-                const PopupMenuItem(
-                  value: _DeviceAction.forget,
-                  child: Text('Forget'),
-                ),
-              ],
-            ),
-          ],
+              PopupMenuButton<_DeviceAction>(
+                icon: const Icon(Icons.more_vert, size: 20),
+                onSelected: (action) => _onDeviceAction(action, device),
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: _DeviceAction.rename,
+                    child: Text('Rename'),
+                  ),
+                  PopupMenuItem(
+                    value: _DeviceAction.toggleAutoConnect,
+                    child: Text(
+                      device.autoConnect
+                          ? 'Disable auto-connect'
+                          : 'Enable auto-connect',
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: _DeviceAction.forget,
+                    child: Text('Forget'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          onTap: () => _toggleConnection(device.deviceId, isThisConnected),
         ),
-        onTap: () => _toggleConnection(device.deviceId, isThisConnected),
       );
     }).toList();
   }
@@ -273,11 +276,14 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
     }
 
     return filtered.map((device) {
-      return ListTile(
-        leading: _ServiceIcons(services: device.advertisedServices),
-        title: Text(device.name.isNotEmpty ? device.name : 'Unknown'),
-        trailing: _SignalIcon(rssi: device.rssi),
-        onTap: () => _connectAndRemember(device),
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: ListTile(
+          leading: _ServiceIcons(services: device.advertisedServices),
+          title: Text(device.name.isNotEmpty ? device.name : 'Unknown'),
+          trailing: _SignalIcon(rssi: device.rssi),
+          onTap: () => _connectAndRemember(device),
+        ),
       );
     }).toList();
   }

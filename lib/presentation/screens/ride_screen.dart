@@ -87,20 +87,23 @@ class _IdleViewState extends ConsumerState<_IdleView> {
                     ],
                     _SensorStatusBar(ref: ref),
                     const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: isConnected
-                            ? () => ref
-                                .read(rideSessionProvider.notifier)
-                                .startRide()
-                            : () => showDeviceSheet(context),
-                        child: Text(
-                          isConnected
-                              ? 'Start Ride'
-                              : 'Connect a sensor to start',
-                          style: const TextStyle(fontSize: 18),
+                    Tooltip(
+                      message: 'Start ride (Enter)',
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: isConnected
+                              ? () => ref
+                                  .read(rideSessionProvider.notifier)
+                                  .startRide()
+                              : () => showDeviceSheet(context),
+                          child: Text(
+                            isConnected
+                                ? 'Start Ride'
+                                : 'Connect a sensor to start',
+                            style: const TextStyle(fontSize: 18),
+                          ),
                         ),
                       ),
                     ),
@@ -458,58 +461,67 @@ class _RideControlsState extends State<_RideControls>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        SizedBox(
-          width: 72,
-          height: 72,
-          child: ElevatedButton(
-            onPressed: widget.onLap,
-            style: ElevatedButton.styleFrom(
-              shape: const CircleBorder(),
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.24),
-            ),
-            child: Text(
-              'LAP',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface,
+        Tooltip(
+          message: 'Manual lap (Space)',
+          child: SizedBox(
+            width: 72,
+            height: 72,
+            child: ElevatedButton(
+              onPressed: widget.onLap,
+              style: ElevatedButton.styleFrom(
+                shape: const CircleBorder(),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.24),
+              ),
+              child: Text(
+                'LAP',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ),
         ),
-        GestureDetector(
-          onLongPressStart: (_) => _stopProgress.forward(from: 0),
-          onLongPressEnd: (_) {
-            if (_stopProgress.status != AnimationStatus.completed) {
-              _stopProgress.reset();
-            }
-          },
-          child: SizedBox(
-            width: 72,
-            height: 72,
-            child: AnimatedBuilder(
-              animation: _stopProgress,
-              builder: (context, child) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: _stopProgress.value,
-                      strokeWidth: 4,
-                      color: Theme.of(context).colorScheme.error,
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.24),
-                    ),
-                    Icon(
-                      Icons.stop,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      size: 32,
-                    ),
-                  ],
-                );
+        Tooltip(
+          message: 'Stop ride (hold 1.5s or Esc)',
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onLongPressStart: (_) => _stopProgress.forward(from: 0),
+              onLongPressEnd: (_) {
+                if (_stopProgress.status != AnimationStatus.completed) {
+                  _stopProgress.reset();
+                }
               },
+              child: SizedBox(
+                width: 72,
+                height: 72,
+                child: AnimatedBuilder(
+                  animation: _stopProgress,
+                  builder: (context, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: _stopProgress.value,
+                          strokeWidth: 4,
+                          color: Theme.of(context).colorScheme.error,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.24),
+                        ),
+                        Icon(
+                          Icons.stop,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          size: 32,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),
@@ -539,12 +551,14 @@ class _ModeSegmentedControl extends StatelessWidget {
             label: 'Focus',
             selected: mode == RideMode.focus,
             onTap: () => ref.read(rideModeProvider.notifier).setFocus(),
+            tooltip: 'Focus mode (\u2190)',
           ),
           const SizedBox(width: 8),
           _ModeButton(
             label: 'Chart',
             selected: mode == RideMode.chart,
             onTap: () => ref.read(rideModeProvider.notifier).setChart(),
+            tooltip: 'Chart mode (\u2192)',
           ),
         ],
       ),
@@ -557,32 +571,40 @@ class _ModeButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    required this.tooltip,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
             color: selected
-                ? Theme.of(context).colorScheme.onSurface
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ? Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.24)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
         ),
       ),
@@ -612,11 +634,17 @@ class _SensorStatusBar extends StatelessWidget {
         ? Colors.green
         : Theme.of(context).colorScheme.onSurfaceVariant;
 
-    return GestureDetector(
-      onTap: () => showDeviceSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Text(label, style: TextStyle(fontSize: 13, color: color)),
+    return Tooltip(
+      message: 'Manage devices (D)',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => showDeviceSheet(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(label, style: TextStyle(fontSize: 13, color: color)),
+          ),
+        ),
       ),
     );
   }
