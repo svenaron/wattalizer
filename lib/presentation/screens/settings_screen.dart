@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wattalizer/core/error_types.dart';
 import 'package:wattalizer/domain/models/autolap_config.dart';
+import 'package:wattalizer/domain/services/export_service.dart';
 import 'package:wattalizer/presentation/providers/autolap_config_provider.dart';
 import 'package:wattalizer/presentation/providers/export_service_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_override_provider.dart';
@@ -189,6 +191,7 @@ class _ImportSection extends ConsumerStatefulWidget {
 
 class _ImportSectionState extends ConsumerState<_ImportSection> {
   bool _importing = false;
+  ({int done, int total})? _zipProgress;
 
   Future<void> _import() async {
     final result = await FilePicker.platform.pickFiles(
@@ -199,7 +202,10 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
     final file = result.files.first;
     if (file.path == null) return;
 
-    setState(() => _importing = true);
+    setState(() {
+      _importing = true;
+      _zipProgress = null;
+    });
 
     try {
       final export = ref.read(exportServiceProvider);
@@ -209,35 +215,144 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
       final ext = file.path!.split('.').last.toLowerCase();
 
       if (ext == 'zip') {
-        final results = await export.importZip(ioFile, config);
-        if (mounted) {
-          _showImportResults(
-            results.where((r) => r.ride != null).length,
-            results.where((r) => r.ride == null).length,
-          );
-        }
+        final results = await export.importZip(
+          ioFile,
+          config,
+          onProgress: (done, total) {
+            if (mounted) {
+              setState(() => _zipProgress = (done: done, total: total));
+            }
+          },
+        );
+        if (mounted) _showDetailedResults(results);
       } else {
-        await export.importTcx(ioFile, config);
-        if (mounted) _showImportResults(1, 0);
+        try {
+          final ride = await export.importTcx(ioFile, config);
+          if (mounted) {
+            _showDetailedResults(
+              [ImportResult(fileName: file.name, ride: ride)],
+            );
+          }
+        } on TcxImportError catch (e) {
+          if (mounted) {
+            _showDetailedResults([ImportResult(fileName: file.name, error: e)]);
+          }
+        }
       }
       ref.invalidate(rideListProvider);
     } on Exception catch (e) {
-      if (mounted) _showImportResults(0, 1, error: '$e');
+      if (mounted) {
+        _showDetailedResults([
+          ImportResult(
+            fileName: file.path!.split(Platform.pathSeparator).last,
+            error: TcxImportError(
+              fileName: file.path!.split(Platform.pathSeparator).last,
+              type: ImportErrorType.malformedXml,
+              detail: e.toString(),
+            ),
+          ),
+        ]);
+      }
     } finally {
-      if (mounted) setState(() => _importing = false);
+      if (mounted) {
+        setState(() {
+          _importing = false;
+          _zipProgress = null;
+        });
+      }
     }
   }
 
-  void _showImportResults(int imported, int errors, {String? error}) {
+  String _errorLabel(ImportErrorType type) => switch (type) {
+        ImportErrorType.malformedXml => 'Malformed XML',
+        ImportErrorType.noTrackpoints => 'No trackpoints',
+        ImportErrorType.noPowerData => 'No power data',
+        ImportErrorType.duplicateRide => 'Duplicate (already imported)',
+        ImportErrorType.fileTooLarge => 'File too large (>50 MB)',
+      };
+
+  void _showDetailedResults(List<ImportResult> results) {
+    final imported = results.where((r) => r.ride != null).length;
+    final errors = results.where((r) => r.error != null).length;
+
     unawaited(
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Import Results'),
-          content: Text(
-            error != null
-                ? 'Error: $error'
-                : '$imported imported, $errors errors',
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (results.length > 1)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: results.length,
+                      itemBuilder: (_, i) {
+                        final r = results[i];
+                        final success = r.ride != null;
+                        return ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            success ? Icons.check_circle : Icons.error_outline,
+                            color: success ? Colors.green : Colors.red,
+                            size: 20,
+                          ),
+                          title: Text(
+                            r.fileName,
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: success
+                              ? null
+                              : Text(
+                                  _errorLabel(r.error!.type),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.red.shade300,
+                                  ),
+                                ),
+                        );
+                      },
+                    ),
+                  )
+                else if (results.length == 1) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        results.first.ride != null
+                            ? Icons.check_circle
+                            : Icons.error_outline,
+                        color: results.first.ride != null
+                            ? Colors.green
+                            : Colors.red,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          results.first.error != null
+                              ? _errorLabel(results.first.error!.type)
+                              : 'Imported successfully',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Text(
+                  '$imported imported, $errors error${errors == 1 ? '' : 's'}',
+                  style: Theme.of(ctx).textTheme.bodySmall,
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -252,10 +367,15 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
 
   @override
   Widget build(BuildContext context) {
+    final progress = _zipProgress;
+    final subtitle = progress != null
+        ? 'Importing... ${progress.done}/${progress.total}'
+        : 'TCX or ZIP files';
+
     return ListTile(
       leading: const Icon(Icons.file_upload),
       title: const Text('Import Rides'),
-      subtitle: const Text('TCX or ZIP files'),
+      subtitle: Text(subtitle),
       trailing: _importing
           ? const SizedBox(
               width: 20,

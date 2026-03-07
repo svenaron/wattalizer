@@ -302,6 +302,41 @@ void main() {
       expect(ride.startTime.hour, 10);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Persistence
+  // ---------------------------------------------------------------------------
+
+  group('persistence', () {
+    test('importTcx calls saveRide and insertReadings on success', () async {
+      final repo = _TrackingRepository();
+      final svc = ExportService(repository: repo, exportDirectory: tempDir);
+      final file = _writeTcxFile(tempDir, _validTcx());
+
+      await svc.importTcx(file, config);
+
+      expect(repo.saveRideCalls, 1);
+      expect(repo.insertReadingsCalls, 1);
+    });
+
+    test('importZip calls onProgress with (0,n)…(n,n) for n valid files',
+        () async {
+      final svc = makeService();
+      final zipFile = _makeZip(tempDir, {
+        'ride1.tcx': _validTcx(),
+        'ride2.tcx': _validTcxWithSpike(),
+      });
+
+      final progress = <(int, int)>[];
+      await svc.importZip(
+        zipFile,
+        config,
+        onProgress: (done, total) => progress.add((done, total)),
+      );
+
+      expect(progress, [(0, 2), (1, 2), (2, 2)]);
+    });
+  });
 }
 
 // =============================================================================
@@ -509,6 +544,25 @@ RideSummaryRow _makeSummaryRow({
         effortCount: 1,
       ),
     );
+
+// =============================================================================
+// Tracking repository (records call counts for persistence assertions)
+// =============================================================================
+
+class _TrackingRepository extends _FakeRepository {
+  int saveRideCalls = 0;
+  int insertReadingsCalls = 0;
+
+  @override
+  Future<void> saveRide(Ride ride) async => saveRideCalls++;
+
+  @override
+  Future<void> insertReadings(
+    String rideId,
+    List<SensorReading> readings,
+  ) async =>
+      insertReadingsCalls++;
+}
 
 // =============================================================================
 // Fake repository

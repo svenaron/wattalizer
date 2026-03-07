@@ -141,19 +141,35 @@ class ExportService {
       efforts,
     );
 
-    return Ride(
+    final ride = Ride(
       id: rideId,
       startTime: result.startTime,
       source: RideSource.importedTcx,
       efforts: efforts,
       summary: summary,
     );
+
+    // Persist atomically
+    await _repository.transaction(() async {
+      await _repository.saveRide(ride);
+      await _repository.insertReadings(rideId, result.readings);
+      await _repository.saveEfforts(rideId, efforts);
+      for (final effort in efforts) {
+        await _repository.saveMapCurve(effort.id, effort.mapCurve);
+      }
+    });
+
+    return ride;
   }
 
   /// Import a ZIP archive of TCX files.
   /// Returns results for each .tcx file (success or failure per file).
   /// Never throws — errors are collected per file.
-  Future<List<ImportResult>> importZip(File file, AutoLapConfig config) async {
+  Future<List<ImportResult>> importZip(
+    File file,
+    AutoLapConfig config, {
+    void Function(int done, int total)? onProgress,
+  }) async {
     final fileName = file.path.split(Platform.pathSeparator).last;
 
     if (file.lengthSync() > _maxFileSizeBytes) {
@@ -185,15 +201,18 @@ class ExportService {
       ];
     }
 
-    final tcxFiles = archive.files.where(
-      (f) => f.name.toLowerCase().endsWith('.tcx'),
-    );
+    final tcxFiles = archive.files
+        .where((f) => f.name.toLowerCase().endsWith('.tcx'))
+        .toList();
+    final total = tcxFiles.length;
 
     final results = <ImportResult>[];
     final tempDir = Directory.systemTemp.createTempSync('wattalizer_import_');
 
     try {
-      for (final entry in tcxFiles) {
+      onProgress?.call(0, total);
+      for (var i = 0; i < tcxFiles.length; i++) {
+        final entry = tcxFiles[i];
         final entryName = entry.name.split('/').last;
         final tempFile = File('${tempDir.path}/$entryName')
           ..writeAsBytesSync(entry.content as List<int>);
@@ -215,6 +234,7 @@ class ExportService {
             ),
           );
         }
+        onProgress?.call(i + 1, total);
       }
     } finally {
       tempDir.deleteSync(recursive: true);
