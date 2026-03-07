@@ -57,6 +57,7 @@ class SprintPowerAnalyzerApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'Wattalizer',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.light(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
       themeMode: themeMode,
