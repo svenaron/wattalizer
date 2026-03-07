@@ -139,7 +139,11 @@ class LocalRideRepository implements RideRepository {
     try {
       await _db.transaction(() async {
         await (_db.update(_db.rides)..where((t) => t.id.equals(ride.id))).write(
-          RidesCompanion(notes: Value(ride.notes)),
+          RidesCompanion(
+            notes: Value(ride.notes),
+            effortCount: Value(ride.summary.effortCount),
+            autoLapConfigId: Value.absentIfNull(ride.autoLapConfigId),
+          ),
         );
 
         await (_db.delete(
