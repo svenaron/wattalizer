@@ -110,7 +110,9 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
             height: 4,
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white38,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.38),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -167,11 +169,13 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
   ) {
     if (devices.isEmpty) {
       return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             'No remembered devices',
-            style: TextStyle(color: Colors.white54),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ];
@@ -189,17 +193,23 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
           isThisConnected ? _connectionLabel(stateValue) : 'Saved',
           style: TextStyle(
             color: stateValue == BleConnectionState.connected
-                ? Colors.greenAccent
-                : Colors.white54,
+                ? Colors.green
+                : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!device.autoConnect)
-              const Tooltip(
+              Tooltip(
                 message: 'Auto-connect off',
-                child: Icon(Icons.link_off, size: 16, color: Colors.white38),
+                child: Icon(
+                  Icons.link_off,
+                  size: 16,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
+                ),
               ),
             PopupMenuButton<_DeviceAction>(
               icon: const Icon(Icons.more_vert, size: 20),
@@ -237,22 +247,26 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
 
     if (filtered.isEmpty && _scanResults.isEmpty) {
       return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
             'Scanning\u2026',
-            style: TextStyle(color: Colors.white54),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ];
     }
     if (filtered.isEmpty) {
       return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Text(
             'No new devices found',
-            style: TextStyle(color: Colors.white54),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ];
@@ -391,11 +405,11 @@ class _ServiceIcons extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (services.contains(SensorType.power))
-          const Icon(Icons.bolt, size: 18, color: Colors.amberAccent),
+          const Icon(Icons.bolt, size: 18, color: Colors.amber),
         if (services.contains(SensorType.heartRate))
-          const Icon(Icons.favorite, size: 18, color: Colors.redAccent),
+          const Icon(Icons.favorite, size: 18, color: Colors.red),
         if (services.contains(SensorType.cadence))
-          const Icon(Icons.speed, size: 18, color: Colors.lightBlueAccent),
+          const Icon(Icons.speed, size: 18, color: Colors.blue),
       ],
     );
   }
@@ -412,13 +426,13 @@ class _SignalIcon extends StatelessWidget {
     final Color color;
     if (rssi > -60) {
       icon = Icons.signal_cellular_alt;
-      color = Colors.greenAccent;
+      color = Colors.green;
     } else if (rssi > -80) {
       icon = Icons.signal_cellular_alt_2_bar;
-      color = Colors.amberAccent;
+      color = Colors.amber;
     } else {
       icon = Icons.signal_cellular_alt_1_bar;
-      color = Colors.redAccent;
+      color = Colors.red;
     }
     return Icon(icon, size: 20, color: color);
   }

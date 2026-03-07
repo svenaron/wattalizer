@@ -25,10 +25,14 @@ class PdcScreen extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error: $e')),
                 data: (range) => range == null
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           'No ride data yet',
-                          style: TextStyle(color: Colors.white38),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.38),
+                          ),
                         ),
                       )
                     : _PdcContent(range: range),
@@ -102,7 +106,10 @@ class _StatCards extends StatelessWidget {
                 children: [
                   Text(
                     '${d}s',
-                    style: const TextStyle(fontSize: 12, color: Colors.white54),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(

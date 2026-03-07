@@ -23,6 +23,7 @@ class MapCurveChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final spots = <FlSpot>[];
     for (var i = 0; i < curve.values.length; i++) {
       final v = curve.values[i];
@@ -31,8 +32,13 @@ class MapCurveChart extends StatelessWidget {
     if (spots.isEmpty) {
       return SizedBox(
         height: compact ? 48 : 200,
-        child: const Center(
-          child: Text('No data', style: TextStyle(color: Colors.white38)),
+        child: Center(
+          child: Text(
+            'No data',
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.38),
+            ),
+          ),
         ),
       );
     }
@@ -43,12 +49,12 @@ class MapCurveChart extends StatelessWidget {
       spots: spots,
       isCurved: true,
       curveSmoothness: 0.2,
-      color: Colors.cyanAccent,
+      color: colorScheme.primary,
       barWidth: compact ? 1.5 : 2.5,
       dotData: const FlDotData(show: false),
       belowBarData: BarAreaData(
         show: !compact,
-        color: Colors.cyanAccent.withValues(alpha: 0.1),
+        color: colorScheme.primary.withValues(alpha: 0.1),
       ),
     );
 
@@ -85,7 +91,7 @@ class MapCurveChart extends StatelessWidget {
         BetweenBarsData(
           fromIndex: 1,
           toIndex: 2,
-          color: Colors.white.withValues(alpha: 0.08),
+          color: colorScheme.onSurface.withValues(alpha: 0.08),
         ),
       );
     }
@@ -111,9 +117,9 @@ class MapCurveChart extends StatelessWidget {
                       reservedSize: 40,
                       getTitlesWidget: (value, meta) => Text(
                         value.toInt().toString(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white38,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -125,9 +131,9 @@ class MapCurveChart extends StatelessWidget {
                       interval: 15,
                       getTitlesWidget: (value, meta) => Text(
                         '${value.toInt()}s',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white38,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -144,8 +150,8 @@ class MapCurveChart extends StatelessWidget {
                       final label = _tooltipLabel(s);
                       return LineTooltipItem(
                         label,
-                        const TextStyle(
-                          color: Colors.white,
+                        TextStyle(
+                          color: colorScheme.onInverseSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),

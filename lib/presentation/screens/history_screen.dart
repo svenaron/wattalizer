@@ -25,10 +25,14 @@ class HistoryScreen extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error: $e')),
                 data: (rides) => rides.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           'No rides found',
-                          style: TextStyle(color: Colors.white38),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.38),
+                          ),
                         ),
                       )
                     : _RideList(rides: rides),
@@ -63,8 +67,11 @@ class _RideList extends ConsumerWidget {
           background: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 24),
-            color: Colors.redAccent,
-            child: const Icon(Icons.delete, color: Colors.white),
+            color: Theme.of(context).colorScheme.error,
+            child: Icon(
+              Icons.delete,
+              color: Theme.of(context).colorScheme.onError,
+            ),
           ),
           confirmDismiss: (_) => _confirmDelete(context),
           onDismissed: (_) async {
@@ -135,7 +142,9 @@ class _RideCard extends StatelessWidget {
                   ),
                   Text(
                     _formatDuration(s.durationSeconds),
-                    style: const TextStyle(color: Colors.white54),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

@@ -36,6 +36,9 @@ class EffortTimeline extends StatelessWidget {
         painter: _TimelinePainter(
           efforts: efforts,
           totalDuration: totalDurationSeconds,
+          bgColor: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.12),
         ),
         child: const SizedBox(height: 40, width: double.infinity),
       ),
@@ -44,15 +47,20 @@ class EffortTimeline extends StatelessWidget {
 }
 
 class _TimelinePainter extends CustomPainter {
-  _TimelinePainter({required this.efforts, required this.totalDuration});
+  _TimelinePainter({
+    required this.efforts,
+    required this.totalDuration,
+    required this.bgColor,
+  });
 
   final List<Effort> efforts;
   final int totalDuration;
+  final Color bgColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     // Background bar.
-    final bgPaint = Paint()..color = Colors.white12;
+    final bgPaint = Paint()..color = bgColor;
     canvas.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(4)),
       bgPaint,
@@ -105,5 +113,6 @@ class _TimelinePainter extends CustomPainter {
   @override
   bool shouldRepaint(_TimelinePainter oldDelegate) =>
       efforts != oldDelegate.efforts ||
-      totalDuration != oldDelegate.totalDuration;
+      totalDuration != oldDelegate.totalDuration ||
+      bgColor != oldDelegate.bgColor;
 }
