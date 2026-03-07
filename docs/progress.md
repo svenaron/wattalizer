@@ -41,7 +41,7 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 **Phase 4 total (Items 15-20): 278 tests passing — Phase 4 COMPLETE**
 
-**Phase 5 total: 279 tests passing (energy fields removed)**
+**Phase 5 total: 281 tests passing — Phase 5 COMPLETE**
 
 ## Phase 4: Presentation
 
@@ -76,4 +76,4 @@ Tracks completion status per item in the implementation order (spec-supplement �
 | 24 | Orientation handling + desktop window resize transitions | ✅ Done | AnimatedSwitcher (300ms, easeInOut) in AppShell (nav rail ↔ bottom nav) and RideScreen _ActiveView (expanded/landscape/focus/chart). |
 | 25 | Animations and transitions | ✅ Done | Focus mode: `AnimatedContainer` bg color + 700ms pulse overlay at >95% max power. Chart mode: full `fl_chart` impl (gradient live curve, faded previous efforts, historical band, record-breaking glow dots, key duration stats, power/HR/cadence header, landscape side panel). Sparkline widget (`CustomPainter`) + `ridePdcProvider` wired into history cards. |
 | 26 | Re-detection preview | ✅ Done | `RedetectPreviewSheet` bottom sheet/dialog. Config fields + preset selector + dual timeline comparison + Apply/Make Default. `updateRide` now also persists `effortCount` + `autoLapConfigId`. |
-| 27 | Bulk import UI | ⬜ Pending |
+| 27 | Bulk import UI | ✅ Done | Fixed persistence bug (importTcx now saves ride+readings+efforts+curves atomically). Added `onProgress` callback to `importZip`. Settings screen shows per-file progress ("Importing... 3/12") and detailed results dialog with per-file ✅/❌ rows and error type labels. |
