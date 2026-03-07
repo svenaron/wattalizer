@@ -267,23 +267,6 @@ void main() {
       expect(successes, hasLength(1));
       expect(failures, hasLength(1));
     });
-
-    test('ZIP file > 50MB → single error result', () async {
-      final svc = makeService();
-      final bigZip = File('${tempDir.path}/big.zip');
-      final sink = bigZip.openWrite();
-      final chunk = List.filled(1024 * 1024, 0x00);
-      for (var i = 0; i < 51; i++) {
-        sink.add(chunk);
-      }
-      await sink.flush();
-      await sink.close();
-
-      final results = await svc.importZip(bigZip, config);
-
-      expect(results, hasLength(1));
-      expect(results.first.error?.type, ImportErrorType.fileTooLarge);
-    });
   });
 
   // ---------------------------------------------------------------------------

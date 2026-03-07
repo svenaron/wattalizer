@@ -35,7 +35,6 @@ class ExportService {
   final Directory? _exportDirectory; // injectable for tests
 
   static const _uuid = Uuid();
-  static const int _maxFileSizeBytes = 50 * 1024 * 1024;
 
   /// Export ride to TCX file. Returns the file path.
   /// Throws [ExportError] on failure.
@@ -58,7 +57,7 @@ class ExportService {
     final fileName = file.path.split(Platform.pathSeparator).last;
 
     // Size check
-    if (file.lengthSync() > _maxFileSizeBytes) {
+    if (file.lengthSync() > 50 * 1024 * 1024) {
       throw TcxImportError(
         fileName: fileName,
         type: ImportErrorType.fileTooLarge,
@@ -172,23 +171,13 @@ class ExportService {
   }) async {
     final fileName = file.path.split(Platform.pathSeparator).last;
 
-    if (file.lengthSync() > _maxFileSizeBytes) {
-      return [
-        ImportResult(
-          fileName: fileName,
-          error: TcxImportError(
-            fileName: fileName,
-            type: ImportErrorType.fileTooLarge,
-            detail: 'ZIP file exceeds 50 MB limit',
-          ),
-        ),
-      ];
-    }
-
     late Archive archive;
+    InputFileStream? inputStream;
     try {
-      archive = ZipDecoder().decodeBytes(file.readAsBytesSync());
+      inputStream = InputFileStream(file.path);
+      archive = ZipDecoder().decodeStream(inputStream);
     } on Object catch (e) {
+      inputStream?.closeSync();
       return [
         ImportResult(
           fileName: fileName,
@@ -214,8 +203,10 @@ class ExportService {
       for (var i = 0; i < tcxFiles.length; i++) {
         final entry = tcxFiles[i];
         final entryName = entry.name.split('/').last;
-        final tempFile = File('${tempDir.path}/$entryName')
-          ..writeAsBytesSync(entry.content as List<int>);
+        final outStream = OutputFileStream('${tempDir.path}/$entryName');
+        entry.writeContent(outStream);
+        outStream.closeSync();
+        final tempFile = File('${tempDir.path}/$entryName');
 
         try {
           final ride = await importTcx(tempFile, config);
@@ -237,6 +228,7 @@ class ExportService {
         onProgress?.call(i + 1, total);
       }
     } finally {
+      inputStream.closeSync();
       tempDir.deleteSync(recursive: true);
     }
 
