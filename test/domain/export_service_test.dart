@@ -267,6 +267,31 @@ void main() {
       expect(successes, hasLength(1));
       expect(failures, hasLength(1));
     });
+
+    test('ZIP with file in subdirectory → 1 successful ImportResult', () async {
+      final svc = makeService();
+      final zipFile = _makeZipWithBytes(tempDir, {
+        'activities/ride.tcx': _validTcx().codeUnits,
+      });
+
+      final results = await svc.importZip(zipFile, config);
+
+      expect(results, hasLength(1));
+      expect(results.first.ride, isNotNull);
+    });
+
+    test('ZIP with .tcx.gz file → 1 successful ImportResult', () async {
+      final svc = makeService();
+      final gzBytes = const GZipEncoder().encode(_validTcx().codeUnits);
+      final zipFile = _makeZipWithBytes(tempDir, {
+        'activities/ride.tcx.gz': gzBytes,
+      });
+
+      final results = await svc.importZip(zipFile, config);
+
+      expect(results, hasLength(1));
+      expect(results.first.ride, isNotNull);
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -478,6 +503,15 @@ File _makeZip(Directory dir, Map<String, String> entries) {
   }
   final zipBytes = ZipEncoder().encode(archive);
   return File('${dir.path}/test.zip')..writeAsBytesSync(zipBytes);
+}
+
+File _makeZipWithBytes(Directory dir, Map<String, List<int>> entries) {
+  final archive = Archive();
+  for (final entry in entries.entries) {
+    archive.addFile(ArchiveFile(entry.key, entry.value.length, entry.value));
+  }
+  final zipBytes = ZipEncoder().encode(archive);
+  return File('${dir.path}/test_bytes.zip')..writeAsBytesSync(zipBytes);
 }
 
 // =============================================================================
