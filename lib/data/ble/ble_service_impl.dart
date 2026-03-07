@@ -23,7 +23,7 @@ class BleServiceImpl implements domain.BleService {
       _stateControllers = {};
   final Map<String, StreamController<domain.RawSensorData>> _sensorControllers =
       {};
-  final Map<String, List<StreamSubscription<dynamic>>> _charSubs = {};
+  final Map<String, List<StreamSubscription<List<int>>>> _charSubs = {};
   final Map<String, CscParser> _cscParsers = {};
   final Map<String, Timer?> _reconnectTimers = {};
   final Map<String, int> _reconnectAttempts = {};
@@ -169,7 +169,13 @@ class BleServiceImpl implements domain.BleService {
 
     if (elapsed > const Duration(minutes: 2).inMilliseconds) {
       _stateControllers[deviceId]?.add(domain.BleConnectionState.disconnected);
+      unawaited(_stateControllers[deviceId]?.close() ?? Future.value());
+      _stateControllers.remove(deviceId);
+      unawaited(_sensorControllers[deviceId]?.close() ?? Future.value());
+      _sensorControllers.remove(deviceId);
       _cscParsers[deviceId]?.reset();
+      _cscParsers.remove(deviceId);
+      _reconnectAttempts.remove(deviceId);
       return;
     }
 
@@ -196,12 +202,16 @@ class BleServiceImpl implements domain.BleService {
 
   @override
   Stream<domain.BleConnectionState> connectionState(String deviceId) {
+    // ??= is intentional: if disconnect() removed the controller, a subsequent
+    // connect() call will re-create it properly. Any watch() after disconnect
+    // that fires before connect() gets an idle broadcast stream with no events.
     _stateControllers[deviceId] ??= StreamController.broadcast();
     return _stateControllers[deviceId]!.stream;
   }
 
   @override
   Stream<domain.RawSensorData> sensorStream(String deviceId) {
+    // Same intentional ??= pattern as connectionState().
     _sensorControllers[deviceId] ??= StreamController.broadcast();
     return _sensorControllers[deviceId]!.stream;
   }
@@ -209,11 +219,18 @@ class BleServiceImpl implements domain.BleService {
   @override
   Future<void> disconnect(String deviceId) async {
     _reconnectTimers[deviceId]?.cancel();
+    _reconnectTimers.remove(deviceId);
     await _cancelCharSubs(deviceId);
     await _connectionSubs[deviceId]?.cancel();
+    _connectionSubs.remove(deviceId);
     await UniversalBle.disconnect(deviceId);
     _stateControllers[deviceId]?.add(domain.BleConnectionState.disconnected);
-    _cscParsers[deviceId]?.reset();
+    await _stateControllers[deviceId]?.close();
+    _stateControllers.remove(deviceId);
+    await _sensorControllers[deviceId]?.close();
+    _sensorControllers.remove(deviceId);
+    _cscParsers.remove(deviceId);
+    _reconnectAttempts.remove(deviceId);
   }
 
   Future<void> _cancelCharSubs(String deviceId) async {

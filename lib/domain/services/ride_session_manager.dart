@@ -62,7 +62,7 @@ class RideSessionManager {
 
   void start(Stream<RawSensorData> sensorStream) {
     _rideId = const Uuid().v4();
-    _startTime = DateTime.now();
+    _startTime = DateTime.now().toUtc();
     _detector = AutoLapDetector(_config);
 
     // Subscribe to raw BLE data — accumulates into current 1s bin
@@ -196,7 +196,7 @@ class RideSessionManager {
     final finalEvent = _detector.endRide(_currentOffsetSeconds);
     _handleEvent(finalEvent);
 
-    final endTime = DateTime.now();
+    final endTime = DateTime.now().toUtc();
     final summary = SummaryCalculator.computeRideSummary(_readings, _efforts);
 
     final ride = Ride(
