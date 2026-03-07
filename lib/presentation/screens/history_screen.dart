@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/domain/interfaces/ride_repository.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
+import 'package:wattalizer/presentation/providers/ride_pdc_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 import 'package:wattalizer/presentation/screens/ride_detail_screen.dart';
 import 'package:wattalizer/presentation/widgets/span_selector.dart';
+import 'package:wattalizer/presentation/widgets/sparkline.dart';
 import 'package:wattalizer/presentation/widgets/tag_filter.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -111,14 +113,17 @@ class _RideList extends ConsumerWidget {
 // Ride card
 // ---------------------------------------------------------------------------
 
-class _RideCard extends StatelessWidget {
+class _RideCard extends ConsumerWidget {
   const _RideCard({required this.row});
 
   final RideSummaryRow row;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final s = row.summary;
+    final pdcAsync = ref.watch(ridePdcProvider(row.id));
+    final pdc = pdcAsync.asData?.value;
+
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -140,11 +145,19 @@ class _RideCard extends StatelessWidget {
                     _formatDate(row.startTime),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  Text(
-                    _formatDuration(s.durationSeconds),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  Row(
+                    children: [
+                      if (pdc != null) ...[
+                        Sparkline(curve: pdc),
+                        const SizedBox(width: 12),
+                      ],
+                      Text(
+                        _formatDuration(s.durationSeconds),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
