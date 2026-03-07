@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
+import 'package:fit_sdk/fit_sdk.dart' show FitException;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wattalizer/core/error_types.dart';
+import 'package:wattalizer/data/fit/fit_parser.dart';
 import 'package:wattalizer/data/tcx/tcx_parser.dart';
 import 'package:wattalizer/data/tcx/tcx_serializer.dart';
 import 'package:wattalizer/domain/interfaces/ride_repository.dart';
@@ -20,7 +22,7 @@ class ImportResult {
   const ImportResult({required this.fileName, this.ride, this.error});
   final String fileName;
   final Ride? ride; // null on failure
-  final TcxImportError? error;
+  final ImportError? error;
 }
 
 class ExportService {
@@ -35,6 +37,7 @@ class ExportService {
   final Directory? _exportDirectory; // injectable for tests
 
   static const _uuid = Uuid();
+  static const int _maxFileSizeBytes = 50 * 1024 * 1024;
 
   /// Export ride to TCX file. Returns the file path.
   /// Throws [ExportError] on failure.
@@ -52,117 +55,86 @@ class ExportService {
 
   /// Import a single TCX file. Returns a fully populated Ride with
   /// re-detected efforts.
-  /// Throws [TcxImportError] on validation failure.
+  /// Throws [ImportError] on validation failure.
   Future<Ride> importTcx(File file, AutoLapConfig config) async {
     final fileName = file.path.split(Platform.pathSeparator).last;
 
-    // Size check
-    if (file.lengthSync() > 50 * 1024 * 1024) {
-      throw TcxImportError(
+    if (file.lengthSync() > _maxFileSizeBytes) {
+      throw ImportError(
         fileName: fileName,
         type: ImportErrorType.fileTooLarge,
         detail: 'File exceeds 50 MB limit',
       );
     }
 
-    // Parse XML
     TcxParseResult result;
     try {
       result = TcxParser.parse(file.readAsStringSync());
     } on XmlException catch (e) {
-      throw TcxImportError(
+      throw ImportError(
         fileName: fileName,
-        type: ImportErrorType.malformedXml,
+        type: ImportErrorType.malformedFile,
         detail: e.toString(),
       );
     } catch (e) {
-      throw TcxImportError(
+      throw ImportError(
         fileName: fileName,
-        type: ImportErrorType.malformedXml,
+        type: ImportErrorType.malformedFile,
         detail: e.toString(),
       );
     }
 
-    // Validate readings
-    if (result.readings.isEmpty) {
-      throw TcxImportError(
-        fileName: fileName,
-        type: ImportErrorType.noTrackpoints,
-        detail: 'No trackpoints found in TCX file',
-      );
-    }
-
-    if (result.readings.every((r) => r.power == null)) {
-      throw TcxImportError(
-        fileName: fileName,
-        type: ImportErrorType.noPowerData,
-        detail: 'No power data found in TCX file',
-      );
-    }
-
-    // Duplicate check: look for rides within ±2 seconds of startTime
-    final startTime = result.startTime;
-    final candidates = await _repository.getRides(
-      from: startTime.subtract(const Duration(seconds: 5)),
-      to: startTime.add(const Duration(seconds: 5)),
-    );
-
-    final newCount = result.readings.length;
-    for (final candidate in candidates) {
-      final timeDiff =
-          candidate.startTime.difference(startTime).inMilliseconds.abs();
-      if (timeDiff <= 2000) {
-        final existingCount = candidate.summary.readingCount;
-        if (existingCount > 0) {
-          final countRatio = (newCount - existingCount).abs() / existingCount;
-          if (countRatio <= 0.05) {
-            throw TcxImportError(
-              fileName: fileName,
-              type: ImportErrorType.duplicateRide,
-              detail: 'Duplicate of ride ${candidate.id}',
-            );
-          }
-        }
-      }
-    }
-
-    // Re-detect efforts
-    final rideId = _uuid.v4();
-    final efforts = EffortManager().redetectEfforts(
-      rideId: rideId,
+    return _importParsedReadings(
+      fileName: fileName,
+      startTime: result.startTime,
       readings: result.readings,
+      source: RideSource.importedTcx,
       config: config,
     );
-
-    // Compute summary
-    final summary = SummaryCalculator.computeRideSummary(
-      result.readings,
-      efforts,
-    );
-
-    final ride = Ride(
-      id: rideId,
-      startTime: result.startTime,
-      source: RideSource.importedTcx,
-      efforts: efforts,
-      summary: summary,
-    );
-
-    // Persist atomically
-    await _repository.transaction(() async {
-      await _repository.saveRide(ride);
-      await _repository.insertReadings(rideId, result.readings);
-      await _repository.saveEfforts(rideId, efforts);
-      for (final effort in efforts) {
-        await _repository.saveMapCurve(effort.id, effort.mapCurve);
-      }
-    });
-
-    return ride;
   }
 
-  /// Import a ZIP archive of TCX files.
-  /// Returns results for each .tcx file (success or failure per file).
+  /// Import a single FIT file. Returns a fully populated Ride with
+  /// re-detected efforts.
+  /// Throws [ImportError] on validation failure.
+  Future<Ride> importFit(File file, AutoLapConfig config) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+
+    if (file.lengthSync() > _maxFileSizeBytes) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.fileTooLarge,
+        detail: 'File exceeds 50 MB limit',
+      );
+    }
+
+    FitParseResult result;
+    try {
+      result = FitParser.parse(file.readAsBytesSync());
+    } on FitException catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: e.toString(),
+      );
+    } catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: e.toString(),
+      );
+    }
+
+    return _importParsedReadings(
+      fileName: fileName,
+      startTime: result.startTime,
+      readings: result.readings,
+      source: RideSource.importedFit,
+      config: config,
+    );
+  }
+
+  /// Import a ZIP archive of TCX and/or FIT files.
+  /// Returns results for each importable file (success or failure per file).
   /// Never throws — errors are collected per file.
   Future<List<ImportResult>> importZip(
     File file,
@@ -181,28 +153,32 @@ class ExportService {
       return [
         ImportResult(
           fileName: fileName,
-          error: TcxImportError(
+          error: ImportError(
             fileName: fileName,
-            type: ImportErrorType.malformedXml,
+            type: ImportErrorType.malformedFile,
             detail: 'Could not decode ZIP: $e',
           ),
         ),
       ];
     }
 
-    final tcxFiles = archive.files.where((f) {
+    final importableFiles = archive.files.where((f) {
       final n = f.name.toLowerCase();
-      return f.isFile && (n.endsWith('.tcx') || n.endsWith('.tcx.gz'));
+      return f.isFile &&
+          (n.endsWith('.tcx') ||
+              n.endsWith('.tcx.gz') ||
+              n.endsWith('.fit') ||
+              n.endsWith('.fit.gz'));
     }).toList();
-    final total = tcxFiles.length;
+    final total = importableFiles.length;
 
     final results = <ImportResult>[];
     final tempDir = Directory.systemTemp.createTempSync('wattalizer_import_');
 
     try {
       onProgress?.call(0, total);
-      for (var i = 0; i < tcxFiles.length; i++) {
-        final entry = tcxFiles[i];
+      for (var i = 0; i < importableFiles.length; i++) {
+        final entry = importableFiles[i];
         final entryName = entry.name.split('/').last;
         final File tempFile;
         if (entryName.toLowerCase().endsWith('.gz')) {
@@ -217,18 +193,24 @@ class ExportService {
           tempFile = File('${tempDir.path}/$entryName');
         }
 
+        final lowerName = entryName.toLowerCase();
         try {
-          final ride = await importTcx(tempFile, config);
+          final Ride ride;
+          if (lowerName.endsWith('.fit')) {
+            ride = await importFit(tempFile, config);
+          } else {
+            ride = await importTcx(tempFile, config);
+          }
           results.add(ImportResult(fileName: entryName, ride: ride));
-        } on TcxImportError catch (e) {
+        } on ImportError catch (e) {
           results.add(ImportResult(fileName: entryName, error: e));
         } on Object catch (e) {
           results.add(
             ImportResult(
               fileName: entryName,
-              error: TcxImportError(
+              error: ImportError(
                 fileName: entryName,
-                type: ImportErrorType.malformedXml,
+                type: ImportErrorType.malformedFile,
                 detail: e.toString(),
               ),
             ),
@@ -242,5 +224,83 @@ class ExportService {
     }
 
     return results;
+  }
+
+  /// Shared post-parse logic: validate, deduplicate, redetect, persist.
+  Future<Ride> _importParsedReadings({
+    required String fileName,
+    required DateTime startTime,
+    required List<SensorReading> readings,
+    required RideSource source,
+    required AutoLapConfig config,
+  }) async {
+    if (readings.isEmpty) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.noTrackpoints,
+        detail: 'No trackpoints found in file',
+      );
+    }
+
+    if (readings.every((r) => r.power == null)) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.noPowerData,
+        detail: 'No power data found in file',
+      );
+    }
+
+    // Duplicate check: look for rides within ±5 seconds of startTime
+    final candidates = await _repository.getRides(
+      from: startTime.subtract(const Duration(seconds: 5)),
+      to: startTime.add(const Duration(seconds: 5)),
+    );
+
+    final newCount = readings.length;
+    for (final candidate in candidates) {
+      final timeDiff =
+          candidate.startTime.difference(startTime).inMilliseconds.abs();
+      if (timeDiff <= 2000) {
+        final existingCount = candidate.summary.readingCount;
+        if (existingCount > 0) {
+          final countRatio = (newCount - existingCount).abs() / existingCount;
+          if (countRatio <= 0.05) {
+            throw ImportError(
+              fileName: fileName,
+              type: ImportErrorType.duplicateRide,
+              detail: 'Duplicate of ride ${candidate.id}',
+            );
+          }
+        }
+      }
+    }
+
+    final rideId = _uuid.v4();
+    final efforts = EffortManager().redetectEfforts(
+      rideId: rideId,
+      readings: readings,
+      config: config,
+    );
+
+    final summary = SummaryCalculator.computeRideSummary(readings, efforts);
+
+    final ride = Ride(
+      id: rideId,
+      startTime: startTime,
+      source: source,
+      efforts: efforts,
+      summary: summary,
+    );
+
+    await _repository.transaction(() async {
+      await _repository.saveRide(ride);
+      await _repository.insertReadings(rideId, readings);
+      await _repository.saveEfforts(rideId, efforts);
+      for (final effort in efforts) {
+        await _repository.saveMapCurve(effort.id, effort.mapCurve);
+      }
+    });
+
+    return ride;
   }
 }

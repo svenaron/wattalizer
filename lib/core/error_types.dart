@@ -29,15 +29,15 @@ class DatabaseError extends AppError {
 // --- Import / Export ---
 
 enum ImportErrorType {
-  malformedXml,
+  malformedFile,
   noTrackpoints,
   noPowerData,
   duplicateRide,
   fileTooLarge,
 }
 
-class TcxImportError extends AppError {
-  TcxImportError({required this.fileName, required this.type, this.detail});
+class ImportError extends AppError {
+  ImportError({required this.fileName, required this.type, this.detail});
 
   final String fileName;
   final ImportErrorType type;
