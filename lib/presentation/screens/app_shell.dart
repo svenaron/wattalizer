@@ -83,8 +83,10 @@ class _AppShellState extends ConsumerState<AppShell> {
       builder: (context, constraints) {
         final layout = layoutSizeOf(constraints.maxWidth);
 
+        final Widget child;
         if (layout == LayoutSize.compact) {
-          return Scaffold(
+          child = Scaffold(
+            key: const ValueKey('compact'),
             body: IndexedStack(index: _selectedIndex, children: _screens),
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedIndex,
@@ -92,25 +94,36 @@ class _AppShellState extends ConsumerState<AppShell> {
               destinations: _destinations,
             ),
           );
+        } else {
+          // Medium or Expanded: NavigationRail on the left.
+          child = Scaffold(
+            key: const ValueKey('rail'),
+            body: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: (i) =>
+                      setState(() => _selectedIndex = i),
+                  labelType: NavigationRailLabelType.all,
+                  destinations: _railDestinations,
+                ),
+                const VerticalDivider(thickness: 1, width: 1),
+                Expanded(
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: _screens,
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
-        // Medium or Expanded: NavigationRail on the left.
-        return Scaffold(
-          body: Row(
-            children: [
-              NavigationRail(
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (i) =>
-                    setState(() => _selectedIndex = i),
-                labelType: NavigationRailLabelType.all,
-                destinations: _railDestinations,
-              ),
-              const VerticalDivider(thickness: 1, width: 1),
-              Expanded(
-                child: IndexedStack(index: _selectedIndex, children: _screens),
-              ),
-            ],
-          ),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeInOut,
+          switchOutCurve: Curves.easeInOut,
+          child: child,
         );
       },
     );

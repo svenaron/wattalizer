@@ -41,6 +41,8 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 **Phase 4 total (Items 15-20): 278 tests passing — Phase 4 COMPLETE**
 
+**Phase 5 total: 280 tests passing**
+
 ## Phase 4: Presentation
 
 | # | Item | Status |
@@ -71,7 +73,7 @@ Tracks completion status per item in the implementation order (spec-supplement �
 
 | # | Item | Status |
 |---|---|---|
-| 24 | Orientation handling + desktop window resize transitions | ⬜ Pending |
+| 24 | Orientation handling + desktop window resize transitions | ✅ Done | AnimatedSwitcher (300ms, easeInOut) in AppShell (nav rail ↔ bottom nav) and RideScreen _ActiveView (expanded/landscape/focus/chart). |
 | 25 | Animations and transitions | ⬜ Pending |
 | 26 | Re-detection preview | ⬜ Pending |
 | 27 | Bulk import UI | ⬜ Pending |
