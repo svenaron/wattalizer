@@ -229,7 +229,7 @@ class ExportService {
         final lowerName = entryName.toLowerCase();
         try {
           final Ride ride;
-          if (lowerName.endsWith('.fit')) {
+          if (lowerName.endsWith('.fit') || lowerName.endsWith('.fit.gz')) {
             ride = await importFit(tempFile, config);
           } else {
             ride = await importTcx(tempFile, config);
