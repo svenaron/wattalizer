@@ -291,76 +291,81 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
           title: const Text('Import Results'),
           content: SizedBox(
             width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (results.length > 1)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 300),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: results.length,
-                      itemBuilder: (_, i) {
-                        final r = results[i];
-                        final success = r.ride != null;
-                        return ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            success ? Icons.check_circle : Icons.error_outline,
-                            color: success ? Colors.green : Colors.red,
-                            size: 20,
-                          ),
-                          title: Text(
-                            r.fileName,
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing: success
-                              ? null
-                              : Text(
-                                  _errorLabel(r.error!.type),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.red.shade300,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (results.length > 1)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: results.length,
+                        itemBuilder: (_, i) {
+                          final r = results[i];
+                          final success = r.ride != null;
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(
+                              success
+                                  ? Icons.check_circle
+                                  : Icons.error_outline,
+                              color: success ? Colors.green : Colors.red,
+                              size: 20,
+                            ),
+                            title: Text(
+                              r.fileName,
+                              style: const TextStyle(fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: success
+                                ? null
+                                : Text(
+                                    _errorLabel(r.error!.type),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.red.shade300,
+                                    ),
                                   ),
-                                ),
-                        );
-                      },
-                    ),
-                  )
-                else if (results.length == 1) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        results.first.ride != null
-                            ? Icons.check_circle
-                            : Icons.error_outline,
-                        color: results.first.ride != null
-                            ? Colors.green
-                            : Colors.red,
-                        size: 20,
+                          );
+                        },
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          results.first.error != null
-                              ? _errorLabel(results.first.error!.type)
-                              : 'Imported successfully',
-                          style: const TextStyle(fontSize: 13),
+                    )
+                  else if (results.length == 1) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          results.first.ride != null
+                              ? Icons.check_circle
+                              : Icons.error_outline,
+                          color: results.first.ride != null
+                              ? Colors.green
+                              : Colors.red,
+                          size: 20,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            results.first.error != null
+                                ? _errorLabel(results.first.error!.type)
+                                : 'Imported successfully',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Text(
+                    '$imported imported, '
+                    '$errors error${errors == 1 ? '' : 's'}',
+                    style: Theme.of(ctx).textTheme.bodySmall,
                   ),
                 ],
-                const SizedBox(height: 12),
-                Text(
-                  '$imported imported, $errors error${errors == 1 ? '' : 's'}',
-                  style: Theme.of(ctx).textTheme.bodySmall,
-                ),
-              ],
+              ),
             ),
           ),
           actions: [
