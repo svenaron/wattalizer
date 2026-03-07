@@ -78,11 +78,7 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
     _scanSub = _bleService.scanForDevices().listen((devices) {
       if (!mounted) return;
       setState(() {
-        for (final d in devices) {
-          _scanResults
-            ..removeWhere((e) => e.deviceId == d.deviceId)
-            ..add(d);
-        }
+        _scanResults = List.from(devices);
       });
     });
   }
@@ -302,7 +298,7 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
       deviceId: device.deviceId,
       displayName: device.name.isNotEmpty ? device.name : 'Unknown',
       supportedServices: device.advertisedServices,
-      lastConnected: DateTime.now(),
+      lastConnected: DateTime.now().toUtc(),
     );
     await repo.saveDevice(info);
     ref.invalidate(deviceListProvider);
