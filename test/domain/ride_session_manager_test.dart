@@ -499,6 +499,64 @@ void main() {
         final ride = await mgr.end();
         expect(ride.efforts, hasLength(1));
       });
+
+      test('MAP curves recomputed with extended 90s window at ride end',
+          () async {
+        final sc = StreamController<RawSensorData>();
+        final mgr = makeManager()..start(sc.stream);
+
+        // Build baseline: 5 ticks at 100W
+        for (var i = 0; i < 5; i++) {
+          mgr.currentBin.add(
+            RawSensorData(
+              receivedAt: DateTime.now(),
+              power: const PowerData(instantaneousPower: 100),
+            ),
+          );
+          mgr.processTick();
+        }
+
+        // Sprint: 5 ticks at 350W → effort detected
+        for (var i = 0; i < 5; i++) {
+          mgr.currentBin.add(
+            RawSensorData(
+              receivedAt: DateTime.now(),
+              power: const PowerData(instantaneousPower: 350),
+            ),
+          );
+          mgr.processTick();
+        }
+
+        // Drop below end threshold → effort ends
+        for (var i = 0; i < 2; i++) {
+          mgr.currentBin.add(
+            RawSensorData(
+              receivedAt: DateTime.now(),
+              power: const PowerData(instantaneousPower: 50),
+            ),
+          );
+          mgr.processTick();
+        }
+
+        // Recovery: 20 more ticks at 150W (data beyond effort boundary)
+        for (var i = 0; i < 20; i++) {
+          mgr.currentBin.add(
+            RawSensorData(
+              receivedAt: DateTime.now(),
+              power: const PowerData(instantaneousPower: 150),
+            ),
+          );
+          mgr.processTick();
+        }
+
+        final ride = await mgr.end();
+        expect(ride.efforts, hasLength(1));
+
+        // After recompute, curve includes recovery data beyond the ~5s sprint.
+        // Index 6 (7s window) must be non-zero since recovery readings exist.
+        final curve = ride.efforts.first.mapCurve;
+        expect(curve.values[6], greaterThan(0));
+      });
     });
   });
 }

@@ -196,6 +196,30 @@ class RideSessionManager {
     final finalEvent = _detector.endRide(_currentOffsetSeconds);
     _handleEvent(finalEvent);
 
+    // Recompute MAP curves with full readings (90s window from effort start)
+    for (var i = 0; i < _efforts.length; i++) {
+      final e = _efforts[i];
+      final curveEnd = e.startOffset + 89;
+      final curveSlice = _readings
+          .where(
+            (r) =>
+                r.timestamp.inSeconds >= e.startOffset &&
+                r.timestamp.inSeconds <= curveEnd,
+          )
+          .toList();
+      final newCurve = MapCurveCalculator.computeBatch(curveSlice, e.id);
+      _efforts[i] = Effort(
+        id: e.id,
+        rideId: e.rideId,
+        effortNumber: e.effortNumber,
+        startOffset: e.startOffset,
+        endOffset: e.endOffset,
+        type: e.type,
+        summary: e.summary,
+        mapCurve: newCurve,
+      );
+    }
+
     final endTime = DateTime.now().toUtc();
     final summary = SummaryCalculator.computeRideSummary(_readings, _efforts);
 

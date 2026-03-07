@@ -12,6 +12,7 @@ class MapCurveChart extends StatelessWidget {
     required this.curve,
     this.historicalRange,
     this.provenanceRecords,
+    this.effortDuration,
     this.compact = false,
     super.key,
   });
@@ -19,6 +20,10 @@ class MapCurveChart extends StatelessWidget {
   final MapCurve curve;
   final HistoricalRange? historicalRange;
   final List<DurationRecord>? provenanceRecords;
+
+  /// Sprint portion duration in seconds. When provided (non-compact mode),
+  /// the sprint region is shaded; the rest of the 90s curve is unshaded.
+  final int? effortDuration;
   final bool compact;
 
   @override
@@ -52,8 +57,10 @@ class MapCurveChart extends StatelessWidget {
       color: colorScheme.primary,
       barWidth: compact ? 1.5 : 2.5,
       dotData: const FlDotData(show: false),
+      // Compact sparkline: fill the whole curve. Non-compact: no fill on the
+      // line itself; sprint region is filled separately below.
       belowBarData: BarAreaData(
-        show: !compact,
+        show: compact,
         color: colorScheme.primary.withValues(alpha: 0.1),
       ),
     );
@@ -96,6 +103,27 @@ class MapCurveChart extends StatelessWidget {
       );
     }
 
+    // Sprint region fill: invisible line with fill up to effortDuration
+    if (effortDuration != null && !compact) {
+      final sprintSpots = spots.where((s) => s.x <= effortDuration!).toList();
+      if (sprintSpots.isNotEmpty) {
+        lineBars.add(
+          LineChartBarData(
+            spots: sprintSpots,
+            isCurved: true,
+            curveSmoothness: 0.2,
+            color: Colors.transparent,
+            barWidth: 0,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: colorScheme.primary.withValues(alpha: 0.1),
+            ),
+          ),
+        );
+      }
+    }
+
     return SizedBox(
       height: compact ? 48 : 200,
       child: LineChart(
@@ -103,7 +131,7 @@ class MapCurveChart extends StatelessWidget {
           lineBarsData: lineBars,
           betweenBarsData: betweenBars,
           minX: 1,
-          maxX: spots.isEmpty ? 90 : spots.last.x,
+          maxX: 90,
           minY: 0,
           maxY: maxY,
           gridData: const FlGridData(show: false),

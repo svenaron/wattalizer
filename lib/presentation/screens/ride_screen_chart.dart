@@ -120,13 +120,34 @@ class RideChartMode extends StatelessWidget {
       );
     }
 
-    // Previous session efforts — faded
+    // Previous session efforts — faded full curve + sprint region fill
     for (final effort in completedEfforts) {
       lines.add(
         _curveLine(
           effort.mapCurve.values,
           cs.onSurface.withValues(alpha: 0.25),
           strokeWidth: 1.5,
+        ),
+      );
+      final dur = effort.summary.durationSeconds;
+      lines.add(
+        LineChartBarData(
+          spots: [
+            for (var i = 0;
+                i < effort.mapCurve.values.length && (i + 1) <= dur;
+                i++)
+              if (effort.mapCurve.values[i] > 0)
+                FlSpot((i + 1).toDouble(), effort.mapCurve.values[i]),
+          ],
+          isCurved: true,
+          curveSmoothness: 0.2,
+          color: Colors.transparent,
+          barWidth: 0,
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(
+            show: true,
+            color: cs.onSurface.withValues(alpha: 0.06),
+          ),
         ),
       );
     }
@@ -141,27 +162,7 @@ class RideChartMode extends StatelessWidget {
       );
     }
 
-    // Compute X max: highest duration with non-zero data across all curves
-    var maxX = 1.0;
-    for (final e in completedEfforts) {
-      for (var i = e.mapCurve.values.length - 1; i >= 0; i--) {
-        if (e.mapCurve.values[i] > 0) {
-          if (i + 1 > maxX) maxX = (i + 1).toDouble();
-          break;
-        }
-      }
-    }
-    if (liveCurve != null) {
-      for (var i = liveCurve.values.length - 1; i >= 0; i--) {
-        if (liveCurve.values[i] > 0) {
-          if (i + 1 > maxX) maxX = (i + 1).toDouble();
-          break;
-        }
-      }
-    }
-    if (histRange != null && histRange.best.length > maxX) {
-      maxX = histRange.best.length.toDouble();
-    }
+    const maxX = 90.0;
 
     // Compute Y max across all data
     var maxY = 100.0;

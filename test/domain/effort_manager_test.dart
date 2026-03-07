@@ -89,6 +89,38 @@ void main() {
       expect(effort.mapCurve.entityId, effort.id);
     });
 
+    test('MAP curve extends beyond effort boundary when ride data is available',
+        () {
+      // Effort is t=1..2, but ride data continues to t=5 (within 90s window)
+      final rideReadings = [
+        _r(0, power: 100),
+        _r(1, power: 800),
+        _r(2, power: 900),
+        _r(3, power: 300), // recovery — outside effort boundary
+        _r(4, power: 250),
+        _r(5, power: 200),
+      ];
+
+      final effort = manager.createEffort(
+        rideId: 'ride1',
+        effortNumber: 1,
+        startOffset: 1,
+        endOffset: 2,
+        type: EffortType.auto,
+        rideReadings: rideReadings,
+      );
+
+      // Summary still uses effort-bounded slice (t=1..2)
+      expect(effort.summary.durationSeconds, 2);
+      expect(effort.summary.avgPower, closeTo(850.0, 0.001));
+
+      // MAP curve extends beyond endOffset=2 using recovery data
+      // 3s best = best 3s window: (800+900+300)/3 ≈ 666.7
+      expect(effort.mapCurve.values[2], greaterThan(0));
+      // 4s best = (800+900+300+250)/4 = 562.5
+      expect(effort.mapCurve.values[3], greaterThan(0));
+    });
+
     test('restSincePrevious is null for first effort', () {
       final readings = List.generate(5, (i) => _r(i, power: 400));
       final effort = manager.createEffort(
