@@ -136,7 +136,7 @@ class ExportService {
       throw ImportError(
         fileName: fileName,
         type: ImportErrorType.malformedFile,
-        detail: e.toString(),
+        detail: 'Read error: $e',
       );
     }
 
@@ -147,13 +147,13 @@ class ExportService {
       throw ImportError(
         fileName: fileName,
         type: ImportErrorType.malformedFile,
-        detail: e.toString(),
+        detail: 'FitException: $e',
       );
     } catch (e) {
       throw ImportError(
         fileName: fileName,
         type: ImportErrorType.malformedFile,
-        detail: e.toString(),
+        detail: '${e.runtimeType}: $e',
       );
     }
 
@@ -328,10 +328,8 @@ class ExportService {
     await _repository.transaction(() async {
       await _repository.saveRide(ride);
       await _repository.insertReadings(rideId, readings);
+      // saveEfforts inserts effort rows + their map_curves in one go
       await _repository.saveEfforts(rideId, efforts);
-      for (final effort in efforts) {
-        await _repository.saveMapCurve(effort.id, effort.mapCurve);
-      }
     });
 
     return ride;
