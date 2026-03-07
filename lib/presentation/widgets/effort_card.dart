@@ -71,7 +71,11 @@ class EffortCard extends StatelessWidget {
           SizedBox(
             width: 80,
             height: 40,
-            child: MapCurveChart(curve: effort.mapCurve, compact: true),
+            child: MapCurveChart(
+              curve: effort.mapCurve,
+              effortDuration: effort.summary.durationSeconds,
+              compact: true,
+            ),
           ),
         ],
       ),
@@ -92,6 +96,7 @@ class EffortCard extends StatelessWidget {
           MapCurveChart(
             curve: effort.mapCurve,
             historicalRange: historicalRange,
+            effortDuration: effort.summary.durationSeconds,
           ),
           const SizedBox(height: 12),
           _StatRow(label: 'Duration', value: _dur(s.durationSeconds)),

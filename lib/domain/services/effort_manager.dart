@@ -27,7 +27,7 @@ class EffortManager {
     required List<SensorReading> rideReadings,
     Effort? previousEffort,
   }) {
-    final slice = rideReadings
+    final summarySlice = rideReadings
         .where(
           (r) =>
               r.timestamp.inSeconds >= startOffset &&
@@ -35,9 +35,19 @@ class EffortManager {
         )
         .toList();
 
+    // MAP curve uses up to 90s from effort start to capture recovery taper
+    final curveEndOffset = startOffset + 89;
+    final curveSlice = rideReadings
+        .where(
+          (r) =>
+              r.timestamp.inSeconds >= startOffset &&
+              r.timestamp.inSeconds <= curveEndOffset,
+        )
+        .toList();
+
     final effortId = _uuid.v4();
-    final summary = SummaryCalculator.computeEffortSummary(slice);
-    final mapCurve = MapCurveCalculator.computeBatch(slice, effortId);
+    final summary = SummaryCalculator.computeEffortSummary(summarySlice);
+    final mapCurve = MapCurveCalculator.computeBatch(curveSlice, effortId);
 
     final restSincePrevious =
         previousEffort != null ? startOffset - previousEffort.endOffset : null;
