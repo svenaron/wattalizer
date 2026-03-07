@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wattalizer/core/constants.dart';
 import 'package:wattalizer/domain/events/autolap_events.dart';
 import 'package:wattalizer/domain/interfaces/ble_service.dart';
 import 'package:wattalizer/domain/models/effort.dart';
@@ -311,7 +312,8 @@ class _FocusModeState extends State<_FocusMode>
     final latest =
         widget.state.readings.isNotEmpty ? widget.state.readings.last : null;
     final power = latest?.power;
-    final maxPower = widget.ref.watch(maxPowerProvider).asData?.value ?? 1500;
+    final maxPower = widget.ref.watch(maxPowerProvider).asData?.value ??
+        kDefaultMaxPowerWatts;
     final pct = power != null ? (power / maxPower).clamp(0.0, 1.2) : 0.0;
     final isInEffort = widget.state.autoLapState == AutoLapState.inEffort ||
         widget.state.autoLapState == AutoLapState.pendingEnd;
@@ -944,7 +946,7 @@ class _RideControlsState extends State<_RideControls>
     super.initState();
     _stopProgress = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: kStopButtonHoldMs),
     )..addStatusListener((s) {
         if (s == AnimationStatus.completed) {
           widget.onStopConfirmed();

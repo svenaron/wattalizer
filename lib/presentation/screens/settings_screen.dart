@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wattalizer/core/constants.dart';
 import 'package:wattalizer/core/error_types.dart';
 import 'package:wattalizer/domain/models/autolap_config.dart';
 import 'package:wattalizer/domain/services/export_service.dart';
@@ -89,6 +90,15 @@ class _MaxPowerSectionState extends ConsumerState<_MaxPowerSection> {
   final _ctrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    final override = ref.read(maxPowerOverrideProvider);
+    if (override != null) {
+      _ctrl.text = override.round().toString();
+    }
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
@@ -105,10 +115,6 @@ class _MaxPowerSectionState extends ConsumerState<_MaxPowerSection> {
       error: (_, __) => '?',
       data: (v) => '${v.round()} W',
     );
-
-    if (isManual && _ctrl.text.isEmpty) {
-      _ctrl.text = override.round().toString();
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +140,7 @@ class _MaxPowerSectionState extends ConsumerState<_MaxPowerSection> {
                   if (s.first) {
                     // Switch to manual with current auto value
                     final current = maxPowerAsync.value;
-                    final val = current ?? 1500.0;
+                    final val = current ?? kDefaultMaxPowerWatts;
                     _ctrl.text = val.round().toString();
                     unawaited(
                       ref.read(maxPowerOverrideProvider.notifier).set(val),
