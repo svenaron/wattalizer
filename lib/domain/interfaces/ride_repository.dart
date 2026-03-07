@@ -52,7 +52,7 @@ abstract class RideRepository {
 
   Future<void> saveRide(Ride ride);
 
-  /// Updates tags and notes only.
+  /// Updates tags, notes, effortCount, and autoLapConfigId.
   Future<void> updateRide(Ride ride);
 
   Future<Ride?> getRide(String id);

@@ -10,6 +10,7 @@ import 'package:wattalizer/presentation/providers/historical_range_provider.dart
 import 'package:wattalizer/presentation/providers/ride_detail_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
+import 'package:wattalizer/presentation/screens/redetect_preview_sheet.dart';
 import 'package:wattalizer/presentation/widgets/effort_card.dart';
 import 'package:wattalizer/presentation/widgets/effort_timeline.dart';
 import 'package:wattalizer/presentation/widgets/tag_input.dart';
@@ -80,6 +81,10 @@ class _DetailViewState extends State<_DetailView> {
             onSelected: (action) => _onAction(action, ride),
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'export', child: Text('Export TCX')),
+              PopupMenuItem(
+                value: 'redetect',
+                child: Text('Re-detect efforts'),
+              ),
               PopupMenuItem(value: 'delete', child: Text('Delete')),
             ],
           ),
@@ -138,9 +143,18 @@ class _DetailViewState extends State<_DetailView> {
     switch (action) {
       case 'export':
         await _exportRide(ride);
+      case 'redetect':
+        await _openRedetect(ride);
       case 'delete':
         await _deleteRide(ride);
     }
+  }
+
+  Future<void> _openRedetect(Ride ride) async {
+    final repo = widget.ref.read(rideRepositoryProvider);
+    final readings = await repo.getReadings(ride.id);
+    if (!mounted) return;
+    showRedetectSheet(context, ride, readings);
   }
 
   Future<void> _exportRide(Ride ride) async {
