@@ -14,6 +14,7 @@ class MapCurveChart extends StatelessWidget {
     this.provenanceRecords,
     this.effortDuration,
     this.compact = false,
+    this.onProvenanceTap,
     super.key,
   });
 
@@ -25,6 +26,9 @@ class MapCurveChart extends StatelessWidget {
   /// the sprint region is shaded; the rest of the 90s curve is unshaded.
   final int? effortDuration;
   final bool compact;
+
+  /// Called when the user taps a data point that has provenance info.
+  final void Function(DurationRecord record)? onProvenanceTap;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +190,19 @@ class MapCurveChart extends StatelessWidget {
                       );
                     }).toList(),
                   ),
+                  touchCallback: (event, response) {
+                    if (event is! FlTapUpEvent) return;
+                    if (onProvenanceTap == null || provenanceRecords == null) {
+                      return;
+                    }
+                    final spot = response?.lineBarSpots
+                        ?.where((s) => s.barIndex == 0)
+                        .firstOrNull;
+                    if (spot == null) return;
+                    final idx = spot.x.toInt() - 1;
+                    if (idx < 0 || idx >= provenanceRecords!.length) return;
+                    onProvenanceTap!(provenanceRecords![idx]);
+                  },
                 ),
         ),
       ),
@@ -202,7 +219,8 @@ class MapCurveChart extends StatelessWidget {
     final r = provenanceRecords![idx];
     final d = r.rideDate.toLocal();
     final date = '${d.day}/${d.month}/${d.year}';
-    return '$base\nEffort #${r.effortNumber}, $date';
+    final hint = onProvenanceTap != null ? '\nTap to open' : '';
+    return '$base\nEffort #${r.effortNumber}, $date$hint';
   }
 
   double _maxY(List<FlSpot> spots) {

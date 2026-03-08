@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/domain/models/historical_range.dart';
 import 'package:wattalizer/domain/models/map_curve.dart';
 import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
+import 'package:wattalizer/presentation/screens/ride_detail_screen.dart';
 import 'package:wattalizer/presentation/widgets/map_curve_chart.dart';
 import 'package:wattalizer/presentation/widgets/span_selector.dart';
 import 'package:wattalizer/presentation/widgets/tag_filter.dart';
@@ -50,6 +53,20 @@ class _PdcContent extends StatelessWidget {
 
   final HistoricalRange range;
 
+  void _navigateToRecord(BuildContext context, DurationRecord record) {
+    unawaited(
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => RideDetailScreen(
+            rideId: record.rideId,
+            scrollToEffortId: record.effortId,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final curve = _curveFromBest(range);
@@ -63,10 +80,14 @@ class _PdcContent extends StatelessWidget {
               curve: curve,
               historicalRange: range,
               provenanceRecords: range.best,
+              onProvenanceTap: (r) => _navigateToRecord(context, r),
             ),
           ),
           const SizedBox(height: 12),
-          _StatCards(best: range.best),
+          _StatCards(
+            best: range.best,
+            onTap: (r) => _navigateToRecord(context, r),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -86,9 +107,10 @@ class _PdcContent extends StatelessWidget {
 const _keyDurations = [1, 5, 15, 30, 60, 90];
 
 class _StatCards extends StatelessWidget {
-  const _StatCards({required this.best});
+  const _StatCards({required this.best, this.onTap});
 
   final List<DurationRecord> best;
+  final void Function(DurationRecord record)? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -99,27 +121,34 @@ class _StatCards extends StatelessWidget {
         final record = best[d - 1];
         return SizedBox(
           width: 100,
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              child: Column(
-                children: [
-                  Text(
-                    '${d}s',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+          child: InkWell(
+            onTap: onTap != null ? () => onTap!(record) : null,
+            borderRadius: BorderRadius.circular(12),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 8,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${d}s',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${record.power.round()} W',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 2),
+                    Text(
+                      '${record.power.round()} W',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
