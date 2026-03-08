@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -17,9 +19,14 @@ import 'package:wattalizer/presentation/widgets/effort_timeline.dart';
 import 'package:wattalizer/presentation/widgets/tag_input.dart';
 
 class RideDetailScreen extends ConsumerWidget {
-  const RideDetailScreen({required this.rideId, super.key});
+  const RideDetailScreen({
+    required this.rideId,
+    this.scrollToEffortId,
+    super.key,
+  });
 
   final String rideId;
+  final String? scrollToEffortId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +48,12 @@ class RideDetailScreen extends ConsumerWidget {
           );
         }
         final range = rangeAsync.asData?.value;
-        return _DetailView(ride: ride, historicalRange: range, ref: ref);
+        return _DetailView(
+          ride: ride,
+          historicalRange: range,
+          ref: ref,
+          scrollToEffortId: scrollToEffortId,
+        );
       },
     );
   }
@@ -56,11 +68,13 @@ class _DetailView extends StatefulWidget {
     required this.ride,
     required this.historicalRange,
     required this.ref,
+    this.scrollToEffortId,
   });
 
   final Ride ride;
   final HistoricalRange? historicalRange;
   final WidgetRef ref;
+  final String? scrollToEffortId;
 
   @override
   State<_DetailView> createState() => _DetailViewState();
@@ -68,6 +82,33 @@ class _DetailView extends StatefulWidget {
 
 class _DetailViewState extends State<_DetailView> {
   int? _expandedEffort;
+  final Map<String, GlobalKey> _effortKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollToEffortId != null) {
+      final match = widget.ride.efforts
+          .where((e) => e.id == widget.scrollToEffortId)
+          .firstOrNull;
+      if (match != null) {
+        _expandedEffort = match.effortNumber;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final key = _effortKeys[match.id];
+          if (key?.currentContext != null) {
+            unawaited(
+              Scrollable.ensureVisible(
+                key!.currentContext!,
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeInOut,
+                alignment: 0.1,
+              ),
+            );
+          }
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +159,10 @@ class _DetailViewState extends State<_DetailView> {
               const SizedBox(height: 12),
 
               // Effort cards
-              ...ride.efforts.map(
-                (e) => Padding(
+              ...ride.efforts.map((e) {
+                _effortKeys.putIfAbsent(e.id, GlobalKey.new);
+                return Padding(
+                  key: _effortKeys[e.id],
                   padding: const EdgeInsets.only(bottom: 8),
                   child: EffortCard(
                     effort: e,
@@ -132,8 +175,8 @@ class _DetailViewState extends State<_DetailView> {
                     }),
                     onDelete: () => _deleteEffort(ride, e.effortNumber),
                   ),
-                ),
-              ),
+                );
+              }),
             ],
           ],
         ),
