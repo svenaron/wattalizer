@@ -83,10 +83,16 @@ jobs:
         run: flutter build macos --release
 
       - name: Launch and verify
-        run: >
-          timeout 15s
-          open -W "build/macos/Build/Products/Release/Wattalizer.app"
-          || [ $? -eq 124 ]
+        run: |
+          "build/macos/Build/Products/Release/Wattalizer.app/Contents/MacOS/wattalizer" &
+          PID=$!
+          sleep 15
+          if kill -0 $PID 2>/dev/null; then
+            kill $PID
+          else
+            wait $PID
+            [ $? -eq 0 ] || exit 1
+          fi
 
   build-android:
     runs-on: ubuntu-latest
