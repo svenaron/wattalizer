@@ -1,17 +1,23 @@
+import 'dart:math' show max;
+
 import 'package:flutter/material.dart';
 import 'package:wattalizer/domain/models/effort.dart';
+import 'package:wattalizer/domain/models/sensor_reading.dart';
 
-/// Horizontal colored bar showing effort segments over ride duration.
+/// Horizontal bar showing effort segments with an optional power trace
+/// overlaid on top.
 class EffortTimeline extends StatelessWidget {
   const EffortTimeline({
     required this.efforts,
     required this.totalDurationSeconds,
+    this.readings,
     this.onEffortTapped,
     super.key,
   });
 
   final List<Effort> efforts;
   final int totalDurationSeconds;
+  final List<SensorReading>? readings;
   final ValueChanged<int>? onEffortTapped;
 
   @override
@@ -42,8 +48,10 @@ class EffortTimeline extends StatelessWidget {
             bgColor: Theme.of(
               context,
             ).colorScheme.onSurface.withValues(alpha: 0.12),
+            readings: readings,
+            powerLineColor: Theme.of(context).colorScheme.onSurface,
           ),
-          child: const SizedBox(height: 40, width: double.infinity),
+          child: const SizedBox(height: 64, width: double.infinity),
         ),
       ),
     );
@@ -55,22 +63,29 @@ class _TimelinePainter extends CustomPainter {
     required this.efforts,
     required this.totalDuration,
     required this.bgColor,
+    required this.powerLineColor,
+    this.readings,
   });
 
   final List<Effort> efforts;
   final int totalDuration;
   final Color bgColor;
+  final Color powerLineColor;
+  final List<SensorReading>? readings;
 
   @override
   void paint(Canvas canvas, Size size) {
     // Background bar.
-    final bgPaint = Paint()..color = bgColor;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(4)),
-      bgPaint,
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(4),
     );
+    canvas.drawRRect(rrect, Paint()..color = bgColor);
 
-    if (efforts.isEmpty || totalDuration <= 0) return;
+    if (efforts.isEmpty || totalDuration <= 0) {
+      _drawPowerTrace(canvas, size);
+      return;
+    }
 
     final maxPower = efforts.fold<double>(
       0,
@@ -83,7 +98,6 @@ class _TimelinePainter extends CustomPainter {
       final pct = maxPower > 0 ? effort.summary.avgPower / maxPower : 0.5;
       final color = _intensityColor(pct);
 
-      final paint = Paint()..color = color;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(
@@ -94,9 +108,85 @@ class _TimelinePainter extends CustomPainter {
           ),
           const Radius.circular(4),
         ),
-        paint,
+        Paint()..color = color,
       );
     }
+
+    _drawPowerTrace(canvas, size);
+  }
+
+  void _drawPowerTrace(Canvas canvas, Size size) {
+    final rs = readings;
+    if (rs == null || rs.isEmpty || totalDuration <= 0) return;
+
+    final nonNull =
+        rs.where((r) => r.power != null).map((r) => r.power!).toList();
+    if (nonNull.isEmpty) return;
+
+    final maxP = nonNull.reduce(max);
+    if (maxP <= 0) return;
+
+    // Clip trace to the bar's rounded corners.
+    canvas
+      ..save()
+      ..clipRRect(
+        RRect.fromRectAndRadius(
+          Offset.zero & size,
+          const Radius.circular(4),
+        ),
+      );
+
+    final linePath = Path();
+    final fillPath = Path();
+    var penDown = false;
+    var lastX = 0.0;
+
+    for (final r in rs) {
+      final x = r.timestamp.inSeconds / totalDuration * size.width;
+      if (r.power == null) {
+        if (penDown) {
+          fillPath
+            ..lineTo(lastX, size.height)
+            ..close();
+          penDown = false;
+        }
+        continue;
+      }
+      final y = size.height - (r.power! / maxP) * size.height;
+      if (!penDown) {
+        linePath.moveTo(x, y);
+        fillPath
+          ..moveTo(x, size.height)
+          ..lineTo(x, y);
+        penDown = true;
+      } else {
+        linePath.lineTo(x, y);
+        fillPath.lineTo(x, y);
+      }
+      lastX = x;
+    }
+
+    if (penDown) {
+      fillPath
+        ..lineTo(lastX, size.height)
+        ..close();
+    }
+
+    canvas
+      ..drawPath(
+        fillPath,
+        Paint()
+          ..color = powerLineColor.withValues(alpha: 0.15)
+          ..style = PaintingStyle.fill,
+      )
+      ..drawPath(
+        linePath,
+        Paint()
+          ..color = powerLineColor.withValues(alpha: 0.70)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke,
+      )
+      ..restore();
   }
 
   Color _intensityColor(double pct) {
@@ -115,8 +205,10 @@ class _TimelinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TimelinePainter oldDelegate) =>
-      efforts != oldDelegate.efforts ||
-      totalDuration != oldDelegate.totalDuration ||
-      bgColor != oldDelegate.bgColor;
+  bool shouldRepaint(_TimelinePainter old) =>
+      efforts != old.efforts ||
+      totalDuration != old.totalDuration ||
+      bgColor != old.bgColor ||
+      readings != old.readings ||
+      powerLineColor != old.powerLineColor;
 }
