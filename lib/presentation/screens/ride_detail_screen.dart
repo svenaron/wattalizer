@@ -17,7 +17,6 @@ import 'package:wattalizer/presentation/providers/ride_repository_provider.dart'
 import 'package:wattalizer/presentation/screens/redetect_preview_sheet.dart';
 import 'package:wattalizer/presentation/widgets/effort_card.dart';
 import 'package:wattalizer/presentation/widgets/effort_timeline.dart';
-import 'package:wattalizer/presentation/widgets/ride_power_chart.dart';
 import 'package:wattalizer/presentation/widgets/tag_input.dart';
 
 class RideDetailScreen extends ConsumerWidget {
@@ -167,55 +166,27 @@ class _DetailViewState extends State<_DetailView> {
             _SummaryGrid(s: s),
             const SizedBox(height: 16),
 
-            // Power-over-time chart
-            Consumer(
-              builder: (ctx, ref, _) {
-                final readingsAsync = ref.watch(rideReadingsProvider(ride.id));
-                return readingsAsync.when(
-                  loading: () => const SizedBox(
-                    height: 180,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (_, __) => const SizedBox.shrink(),
-                  data: (readings) {
-                    if (readings.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Power',
-                          style: Theme.of(ctx).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        RidePowerChart(
-                          readings: readings,
-                          efforts: ride.efforts,
-                          totalDurationSeconds: s.durationSeconds,
-                          onEffortDoubleTapped:
-                              ride.efforts.isEmpty ? null : _focusEffort,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-
-            // Effort timeline
+            // Effort timeline with power trace
             if (ride.efforts.isNotEmpty) ...[
               Text('Efforts', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 8),
-              EffortTimeline(
-                efforts: ride.efforts,
-                totalDurationSeconds: s.durationSeconds,
-                onEffortTapped: (n) => setState(
-                  () => _expandedEffort = n == _expandedEffort ? null : n,
-                ),
+              Consumer(
+                builder: (ctx, ref, _) {
+                  final readings =
+                      ref.watch(rideReadingsProvider(ride.id)).asData?.value;
+                  return EffortTimeline(
+                    efforts: ride.efforts,
+                    totalDurationSeconds: s.durationSeconds,
+                    readings: readings,
+                    onEffortTapped: (n) {
+                      if (_expandedEffort == n) {
+                        setState(() => _expandedEffort = null);
+                      } else {
+                        _focusEffort(n);
+                      }
+                    },
+                  );
+                },
               ),
               const SizedBox(height: 12),
 
