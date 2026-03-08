@@ -201,6 +201,77 @@ void main() {
       },
     );
 
+    test('topN=2: worst is 2nd-best, not all-time worst', () {
+      // 3 efforts at 1s: 1000, 800, 200 → top2 = [1000, 800]; worst = 800
+      final e1 = _curve(
+        values5: [1000, 900, 800, 700, 600],
+        effortId: 'e1',
+        rideId: 'r1',
+      );
+      final e2 = _curve(
+        values5: [800, 750, 700, 650, 600],
+        effortId: 'e2',
+        rideId: 'r1',
+      );
+      final e3 = _curve(
+        values5: [200, 190, 180, 170, 160],
+        effortId: 'e3',
+        rideId: 'r1',
+      );
+
+      final result = calculator.compute([e1, e2, e3], topN: 2);
+
+      expect(result.best[0].power, closeTo(1000, 0.001));
+      expect(result.best[0].effortId, 'e1');
+      // worst = 2nd-best = 800, not 200
+      expect(result.worst[0].power, closeTo(800, 0.001));
+      expect(result.worst[0].effortId, 'e2');
+    });
+
+    test('fewer efforts than topN: worst = weakest available', () {
+      final e1 = _curve(
+        values5: [1000, 900, 800, 700, 600],
+        effortId: 'e1',
+        rideId: 'r1',
+      );
+      final e2 = _curve(
+        values5: [800, 750, 700, 650, 600],
+        effortId: 'e2',
+        rideId: 'r1',
+      );
+
+      // Default topN=10 but only 2 efforts → worst = 2nd-best (e2)
+      final result = calculator.compute([e1, e2]);
+
+      expect(result.best[0].power, closeTo(1000, 0.001));
+      expect(result.worst[0].power, closeTo(800, 0.001));
+      expect(result.worst[0].effortId, 'e2');
+    });
+
+    test('default topN=10: with 5 efforts worst = 5th-best', () {
+      final curves = List.generate(
+        5,
+        (i) => _curve(
+          values5: [
+            (1000 - i * 100).toDouble(),
+            (900 - i * 100).toDouble(),
+            (800 - i * 100).toDouble(),
+            (700 - i * 100).toDouble(),
+            (600 - i * 100).toDouble(),
+          ],
+          effortId: 'e$i',
+          rideId: 'r1',
+        ),
+      );
+
+      // topN=10, only 5 efforts → worst = weakest of the 5 = e4 with 600
+      final result = calculator.compute(curves);
+
+      expect(result.best[0].power, closeTo(1000, 0.001));
+      expect(result.worst[0].power, closeTo(600, 0.001));
+      expect(result.worst[0].effortId, 'e4');
+    });
+
     test('durationSeconds in records matches index+1', () {
       final c = _curve(
         values5: [1000, 900, 800, 700, 600],

@@ -3,13 +3,18 @@ import 'package:wattalizer/domain/models/historical_range.dart';
 import 'package:wattalizer/domain/models/history_span.dart';
 
 class HistoricalRangeCalculator {
-  /// Compute best and worst envelopes with provenance from a list of
-  /// effort-level MAP curves in a single pass.
+  /// Compute best and top-N envelopes with provenance from a list of
+  /// effort-level MAP curves.
   ///
-  /// Performance: O(n × 90) where n = number of efforts. Single pass.
+  /// [topN] controls the lower bound of the envelope: the lower bound at each
+  /// duration is the Nth-best value (default 10). If fewer than [topN] efforts
+  /// exist, the lower bound is the weakest available value.
+  ///
+  /// Performance: O(n × 90 × topN) — negligible for small topN.
   HistoricalRange compute(
     List<MapCurveWithProvenance> effortCurves, {
     HistorySpan span = HistorySpan.allTime,
+    int topN = 10,
   }) {
     const kCount = 90;
 
@@ -33,28 +38,42 @@ class HistoricalRangeCalculator {
       );
     }
 
-    // Initialize best/worst from the first curve.
-    final first = effortCurves.first;
-    final bestPower = List<double>.from(first.curve.values);
-    final worstPower = List<double>.from(first.curve.values);
-    final bestProv = List<MapCurveWithProvenance>.filled(kCount, first);
-    final worstProv = List<MapCurveWithProvenance>.filled(kCount, first);
+    // For each duration: maintain top-N (power, provenance) pairs, sorted desc.
+    final topLists = List<List<(double, MapCurveWithProvenance)>>.generate(
+      kCount,
+      (_) => [],
+    );
 
-    // Single pass: for each duration, find max (best) and min (worst).
-    for (var e = 1; e < effortCurves.length; e++) {
-      final curve = effortCurves[e];
+    for (final curve in effortCurves) {
       for (var i = 0; i < kCount; i++) {
         final v = curve.curve.values[i];
-        if (v > bestPower[i]) {
-          bestPower[i] = v;
-          bestProv[i] = curve;
+        final list = topLists[i];
+        var inserted = false;
+        for (var j = 0; j < list.length; j++) {
+          if (v > list[j].$1) {
+            list.insert(j, (v, curve));
+            inserted = true;
+            break;
+          }
         }
-        if (v < worstPower[i]) {
-          worstPower[i] = v;
-          worstProv[i] = curve;
-        }
+        if (!inserted && list.length < topN) list.add((v, curve));
+        if (list.length > topN) list.removeLast();
       }
     }
+
+    // Best = highest value; worst = Nth-best (bottom of top-N band).
+    final bestPower =
+        List<double>.generate(kCount, (i) => topLists[i].first.$1);
+    final worstPower =
+        List<double>.generate(kCount, (i) => topLists[i].last.$1);
+    final bestProv = List<MapCurveWithProvenance>.generate(
+      kCount,
+      (i) => topLists[i].first.$2,
+    );
+    final worstProv = List<MapCurveWithProvenance>.generate(
+      kCount,
+      (i) => topLists[i].last.$2,
+    );
 
     // Monotonicity enforcement: sweep right-to-left on both envelopes.
     // If values[i] < values[i+1], bump values[i] to values[i+1] and
