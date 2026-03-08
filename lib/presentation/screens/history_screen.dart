@@ -7,6 +7,7 @@ import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_pdc_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 import 'package:wattalizer/presentation/screens/ride_detail_screen.dart';
+import 'package:wattalizer/presentation/widgets/import_fab.dart';
 import 'package:wattalizer/presentation/widgets/span_selector.dart';
 import 'package:wattalizer/presentation/widgets/sparkline.dart';
 import 'package:wattalizer/presentation/widgets/tag_filter.dart';
@@ -19,6 +20,7 @@ class HistoryScreen extends ConsumerWidget {
     final ridesAsync = ref.watch(rideListProvider);
 
     return Scaffold(
+      floatingActionButton: const ImportFab(),
       body: SafeArea(
         child: Column(
           children: [
