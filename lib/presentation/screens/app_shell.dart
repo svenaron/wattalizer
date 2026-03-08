@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/presentation/layout/breakpoints.dart';
 import 'package:wattalizer/presentation/providers/ride_session_provider.dart';
@@ -6,6 +9,7 @@ import 'package:wattalizer/presentation/screens/history_screen.dart';
 import 'package:wattalizer/presentation/screens/pdc_screen.dart';
 import 'package:wattalizer/presentation/screens/ride_screen.dart';
 import 'package:wattalizer/presentation/screens/settings_screen.dart';
+import 'package:wattalizer/presentation/utils/import_utils.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -15,7 +19,43 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  static const _ch = MethodChannel('wattalizer/file_intents');
+
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ch.setMethodCallHandler(_onFileIntent);
+    unawaited(_checkPendingFile());
+  }
+
+  @override
+  void dispose() {
+    _ch.setMethodCallHandler(null);
+    super.dispose();
+  }
+
+  Future<void> _checkPendingFile() async {
+    try {
+      final path = await _ch.invokeMethod<String>('getPendingFile');
+      if (path != null && mounted) await _handleFile(path);
+    } on PlatformException {
+      // Not implemented on this platform — ignore.
+    }
+  }
+
+  Future<void> _onFileIntent(MethodCall call) async {
+    if (call.method == 'openFile' && mounted) {
+      await _handleFile(call.arguments as String);
+    }
+  }
+
+  Future<void> _handleFile(String path) async {
+    setState(() => _selectedIndex = 1); // navigate to History
+    final results = await importFileFromPath(ref, path);
+    if (mounted) showImportResultsDialog(context, results);
+  }
 
   static const _screens = <Widget>[
     RideScreen(),
