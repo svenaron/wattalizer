@@ -19,30 +19,39 @@ void main() {
       ];
       final curve = MapCurveCalculator.computeBatch(readings, 'test');
 
-      // 1s best = 800 (no nulls)
+      // 1s best = 800 — window [800], no nulls
       expect(curve.values[0], closeTo(800.0, 0.01));
       expect(curve.flags[0].hadNulls, false);
+      expect(curve.flags[0].wasEnforced, false);
 
-      // 2s best = 800 (window [800,null]: 1 non-null,
-      // 800/1=800, hadNulls=true)
-      expect(curve.values[1], closeTo(800.0, 0.01));
-      expect(curve.flags[1].hadNulls, true);
+      // 2s best = 550 — window [500,600]: 1100/2=550, no nulls
+      // (other windows: [100,800]=450, [800,null]=400, [null,500]=250)
+      expect(curve.values[1], closeTo(550.0, 0.01));
+      expect(curve.flags[1].hadNulls, false);
+      expect(curve.flags[1].wasEnforced, false);
 
-      // 3s best = 800 (window [800,null,null]: 1 non-null → 800)
-      expect(curve.values[2], closeTo(800.0, 0.01));
+      // 3s best raw = 366.7 — window [null,500,600]: 1100/3≈366.7
+      // Enforced to 380 by 5s value
+      expect(curve.values[2], closeTo(380.0, 0.01));
       expect(curve.flags[2].hadNulls, true);
+      expect(curve.flags[2].wasEnforced, true);
 
-      // 4s best = 650 (window [800,null,null,500]: 2 non-null → 1300/2=650)
-      expect(curve.values[3], closeTo(650.0, 0.01));
+      // 4s best raw = 325 — window [800,null,null,500]: 1300/4=325
+      // Enforced to 380 by 5s value
+      expect(curve.values[3], closeTo(380.0, 0.01));
       expect(curve.flags[3].hadNulls, true);
+      expect(curve.flags[3].wasEnforced, true);
 
-      // 5s best = 633.3 (window [800,null,null,500,600]: 3 non-null → 1900/3)
-      expect(curve.values[4], closeTo(1900.0 / 3, 0.01));
+      // 5s best raw = 380 — window [800,null,null,500,600]: 1900/5=380, hadNulls=true
+      // No enforcement needed (380 >= 6s value 333.3)
+      expect(curve.values[4], closeTo(380.0, 0.01));
       expect(curve.flags[4].hadNulls, true);
+      expect(curve.flags[4].wasEnforced, false);
 
-      // 6s best = 500 (all 6 readings: 4 non-null → 2000/4=500)
-      expect(curve.values[5], closeTo(500.0, 0.01));
+      // 6s best = 333.3 — only window: 2000/6≈333.3, hadNulls=true
+      expect(curve.values[5], closeTo(2000.0 / 6, 0.01));
       expect(curve.flags[5].hadNulls, true);
+      expect(curve.flags[5].wasEnforced, false);
 
       // Durations 7..90: d > n, no valid window → 0
       for (var i = 6; i < 90; i++) {
@@ -83,12 +92,13 @@ void main() {
     });
 
     test('hadNulls flag set when best window contains a null', () {
-      final readings = [_r(0, power: 100), _r(1, power: 800), _r(2)];
+      // Input: [100, null, 800] — divisor is window size d, not nonNullCount
+      final readings = [_r(0, power: 100), _r(1), _r(2, power: 800)];
       final curve = MapCurveCalculator.computeBatch(readings, 'test');
 
       // 1s best = 800 — window [800] has no nulls
       expect(curve.flags[0].hadNulls, false);
-      // 2s best = 800 — window [800, null] has a null
+      // 2s best: [null,800]=800/2=400 vs [100,null]=100/2=50 → 400, hadNulls=true
       expect(curve.flags[1].hadNulls, true);
     });
 
