@@ -58,7 +58,7 @@ void main() {
       final container = createTestContainer(repository: repo);
       addTearDown(container.dispose);
 
-      container.read(spanSelectionProvider.notifier).span = HistorySpan.week;
+      container.read(spanSelectionProvider.notifier).setSpan(HistorySpan.week);
       container.read(tagFilterProvider.notifier).addTag('track');
       await container.read(historicalRangeProvider.future);
 
