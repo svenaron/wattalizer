@@ -70,5 +70,52 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key><string>com.wattalizer.tcx</string>
+			<key>UTTypeDescription</key><string>Training Center XML</string>
+			<key>UTTypeConformsTo</key><array><string>public.xml</string></array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key><array><string>tcx</string></array>
+				<key>public.mime-type</key>
+				<string>application/vnd.garmin.tcx+xml</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key><string>com.wattalizer.fit</string>
+			<key>UTTypeDescription</key><string>FIT Activity File</string>
+			<key>UTTypeConformsTo</key><array><string>public.data</string></array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key><array><string>fit</string></array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key><string>Training Center XML</string>
+			<key>CFBundleTypeRole</key><string>Viewer</string>
+			<key>LSHandlerRank</key><string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array><string>com.wattalizer.tcx</string></array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>FIT Activity File</string>
+			<key>CFBundleTypeRole</key><string>Viewer</string>
+			<key>LSHandlerRank</key><string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array><string>com.wattalizer.fit</string></array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>Gzip Compressed File</string>
+			<key>CFBundleTypeRole</key><string>Viewer</string>
+			<key>LSHandlerRank</key><string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array><string>org.gnu.gnu-zip-archive</string></array>
+		</dict>
+	</array>
 </dict>
 </plist>
