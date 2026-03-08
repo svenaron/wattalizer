@@ -11,7 +11,6 @@ Ride _makeRide(String id) => Ride(
       startTime: DateTime(2025),
       endTime: DateTime(2025, 1, 1, 0, 1),
       source: RideSource.recorded,
-      autoLapConfigId: 'default',
       summary: const RideSummary(
         durationSeconds: 60,
         activeDurationSeconds: 30,

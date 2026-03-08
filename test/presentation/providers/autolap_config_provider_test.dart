@@ -14,7 +14,7 @@ void main() {
 
       final config = await container.read(autoLapConfigProvider.future);
 
-      expect(config.id, 'default');
+      expect(config.id, 1);
       expect(config.name, 'Default');
       expect(config.startDeltaWatts, 200);
     });
@@ -22,17 +22,17 @@ void main() {
     test('returns custom config when repository is overridden', () async {
       final repo = FakeRepository()
         ..defaultConfigToReturn = const AutoLapConfig(
-          id: 'flying200',
-          name: 'Flying 200m',
+          id: 2,
+          name: 'Flying Start',
           startDeltaWatts: 150,
-          endDeltaWatts: 120,
+          endDeltaWatts: 150,
         );
       final container = createTestContainer(repository: repo);
       addTearDown(container.dispose);
 
       final config = await container.read(autoLapConfigProvider.future);
 
-      expect(config.id, 'flying200');
+      expect(config.id, 2);
       expect(config.startDeltaWatts, 150);
     });
   });

@@ -9,3 +9,13 @@ final autoLapConfigProvider = FutureProvider<AutoLapConfig>((ref) async {
   final repo = ref.read(rideRepositoryProvider);
   return repo.getDefaultConfig();
 });
+
+/// Loads all saved [AutoLapConfig]s sorted by name.
+/// keepAlive — consistent with autoLapConfigProvider.
+final autoLapConfigListProvider =
+    FutureProvider<List<AutoLapConfig>>((ref) async {
+  final repo = ref.read(rideRepositoryProvider);
+  final configs = await repo.getAutoLapConfigs();
+  configs.sort((a, b) => a.name.compareTo(b.name));
+  return configs;
+});

@@ -27,7 +27,6 @@ void main() {
       expect(ride.efforts, isEmpty);
       expect(ride.notes, isNull);
       expect(ride.endTime, isNull);
-      expect(ride.autoLapConfigId, isNull);
     });
 
     group('copyWith', () {
@@ -59,11 +58,6 @@ void main() {
       test('updates notes', () {
         final copy = base.copyWith(notes: 'great session');
         expect(copy.notes, 'great session');
-      });
-
-      test('updates autoLapConfigId', () {
-        final copy = base.copyWith(autoLapConfigId: 'cfg1');
-        expect(copy.autoLapConfigId, 'cfg1');
       });
     });
   });

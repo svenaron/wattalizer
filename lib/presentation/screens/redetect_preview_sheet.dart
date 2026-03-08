@@ -15,8 +15,6 @@ import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 import 'package:wattalizer/presentation/widgets/effort_timeline.dart';
 
-enum _Preset { shortSprint, flying200, teamSprint, custom }
-
 /// Opens the re-detection preview adaptively:
 /// narrow (<600dp) → modal bottom sheet, wide (≥600dp) → centered dialog.
 void showRedetectSheet(
@@ -78,7 +76,7 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
   late AutoLapConfig _config;
   late List<Effort> _preview;
   bool _applying = false;
-  _Preset _preset = _Preset.custom;
+  AutoLapConfig? _selectedConfig; // null = custom
 
   late TextEditingController _startDeltaCtrl;
   late TextEditingController _startConfirmCtrl;
@@ -86,13 +84,13 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
   late TextEditingController _endConfirmCtrl;
   late TextEditingController _minEffortCtrl;
   late TextEditingController _baselineWindowCtrl;
+  late TextEditingController _minPeakWattsCtrl;
 
   @override
   void initState() {
     super.initState();
     _config = ref.read(autoLapConfigProvider).asData?.value ??
-        AutoLapConfig.shortSprint();
-    _preset = _detectPreset(_config);
+        AutoLapConfig.standingStart();
 
     _startDeltaCtrl =
         TextEditingController(text: _config.startDeltaWatts.toString());
@@ -106,6 +104,9 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
         TextEditingController(text: _config.minEffortSeconds.toString());
     _baselineWindowCtrl =
         TextEditingController(text: _config.preEffortBaselineWindow.toString());
+    _minPeakWattsCtrl = TextEditingController(
+      text: _config.minPeakWatts != null ? _config.minPeakWatts.toString() : '',
+    );
 
     _preview = widget.ride.efforts;
     _runPreview();
@@ -119,6 +120,7 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
     _endConfirmCtrl.dispose();
     _minEffortCtrl.dispose();
     _baselineWindowCtrl.dispose();
+    _minPeakWattsCtrl.dispose();
     super.dispose();
   }
 
@@ -131,36 +133,22 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
     setState(() => _preview = newEfforts);
   }
 
-  void _onPresetChanged(_Preset? p) {
-    if (p == null) return;
-    setState(() => _preset = p);
-    switch (p) {
-      case _Preset.shortSprint:
-        _applyPreset(AutoLapConfig.shortSprint());
-      case _Preset.flying200:
-        _applyPreset(AutoLapConfig.flying200());
-      case _Preset.teamSprint:
-        _applyPreset(AutoLapConfig.teamSprint());
-      case _Preset.custom:
-        break;
-    }
-  }
-
-  void _applyPreset(AutoLapConfig cfg) {
+  void _applyConfig(AutoLapConfig cfg) {
+    setState(() => _selectedConfig = cfg);
     _startDeltaCtrl.text = cfg.startDeltaWatts.toString();
     _startConfirmCtrl.text = cfg.startConfirmSeconds.toString();
     _endDeltaCtrl.text = cfg.endDeltaWatts.toString();
     _endConfirmCtrl.text = cfg.endConfirmSeconds.toString();
     _minEffortCtrl.text = cfg.minEffortSeconds.toString();
     _baselineWindowCtrl.text = cfg.preEffortBaselineWindow.toString();
+    _minPeakWattsCtrl.text =
+        cfg.minPeakWatts != null ? cfg.minPeakWatts.toString() : '';
     _config = cfg;
     _runPreview();
   }
 
   void _onFieldChanged() {
-    if (_preset != _Preset.custom) {
-      setState(() => _preset = _Preset.custom);
-    }
+    setState(() => _selectedConfig = null); // switch to Custom
     _config = AutoLapConfig(
       id: _config.id,
       name: _config.name,
@@ -178,29 +166,46 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
       preEffortBaselineWindow: int.tryParse(_baselineWindowCtrl.text) ??
           _config.preEffortBaselineWindow,
       inEffortTrailingWindow: _config.inEffortTrailingWindow,
+      minPeakWatts: double.tryParse(_minPeakWattsCtrl.text.trim()),
       isDefault: _config.isDefault,
     );
     _runPreview();
   }
 
+  AutoLapConfig? _detectConfig(
+    AutoLapConfig cfg,
+    List<AutoLapConfig> configs,
+  ) {
+    for (final c in configs) {
+      if (_matches(cfg, c)) return c;
+    }
+    return null;
+  }
+
   Future<void> _makeDefault() async {
     final repo = ref.read(rideRepositoryProvider);
-    await repo.saveAutoLapConfig(
-      AutoLapConfig(
-        id: 'user_default',
-        name: _config.name,
-        startDeltaWatts: _config.startDeltaWatts,
-        startConfirmSeconds: _config.startConfirmSeconds,
-        startDropoutTolerance: _config.startDropoutTolerance,
-        endDeltaWatts: _config.endDeltaWatts,
-        endConfirmSeconds: _config.endConfirmSeconds,
-        minEffortSeconds: _config.minEffortSeconds,
-        preEffortBaselineWindow: _config.preEffortBaselineWindow,
-        inEffortTrailingWindow: _config.inEffortTrailingWindow,
-        isDefault: true,
-      ),
-    );
-    ref.invalidate(autoLapConfigProvider);
+    if (_selectedConfig != null) {
+      await repo.saveAutoLapConfig(_selectedConfig!.copyWith(isDefault: true));
+    } else {
+      await repo.saveAutoLapConfig(
+        AutoLapConfig(
+          name: _config.name.isNotEmpty ? _config.name : 'Custom',
+          startDeltaWatts: _config.startDeltaWatts,
+          startConfirmSeconds: _config.startConfirmSeconds,
+          startDropoutTolerance: _config.startDropoutTolerance,
+          endDeltaWatts: _config.endDeltaWatts,
+          endConfirmSeconds: _config.endConfirmSeconds,
+          minEffortSeconds: _config.minEffortSeconds,
+          preEffortBaselineWindow: _config.preEffortBaselineWindow,
+          inEffortTrailingWindow: _config.inEffortTrailingWindow,
+          minPeakWatts: _config.minPeakWatts,
+          isDefault: true,
+        ),
+      );
+    }
+    ref
+      ..invalidate(autoLapConfigProvider)
+      ..invalidate(autoLapConfigListProvider);
   }
 
   Future<void> _apply() async {
@@ -222,7 +227,6 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
         avgCadence: s.avgCadence,
         avgLeftRightBalance: s.avgLeftRightBalance,
       ),
-      autoLapConfigId: _config.id,
     );
     await repo.updateRide(updatedRide);
     ref
@@ -237,6 +241,18 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
     final ride = widget.ride;
     final currentCount = ride.efforts.length;
     final previewCount = _preview.length;
+    // Detect matching config on first load
+    final configsAsync = ref.watch(autoLapConfigListProvider)
+      ..whenData((configs) {
+        if (_selectedConfig == null) {
+          final matched = _detectConfig(_config, configs);
+          if (matched != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _selectedConfig = matched);
+            });
+          }
+        }
+      });
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -253,32 +269,38 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // --- Preset selector ---
-                  SegmentedButton<_Preset>(
-                    segments: const [
-                      ButtonSegment(
-                        value: _Preset.shortSprint,
-                        label: Text('Short'),
+                  // --- Config chip row ---
+                  configsAsync.when(
+                    loading: () => const SizedBox(
+                      height: 36,
+                      child: Center(child: LinearProgressIndicator()),
+                    ),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (configs) => SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final cfg in configs)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(cfg.name),
+                                selected: _selectedConfig?.id == cfg.id,
+                                onSelected: (_) => _applyConfig(cfg),
+                              ),
+                            ),
+                          ChoiceChip(
+                            label: const Text('Custom'),
+                            selected: _selectedConfig == null,
+                            onSelected: (_) {},
+                          ),
+                        ],
                       ),
-                      ButtonSegment(
-                        value: _Preset.flying200,
-                        label: Text('Flying'),
-                      ),
-                      ButtonSegment(
-                        value: _Preset.teamSprint,
-                        label: Text('Team'),
-                      ),
-                      ButtonSegment(
-                        value: _Preset.custom,
-                        label: Text('Custom'),
-                      ),
-                    ],
-                    selected: {_preset},
-                    onSelectionChanged: (s) => _onPresetChanged(s.first),
+                    ),
                   ),
                   const SizedBox(height: 12),
 
-                  // --- 6 parameter fields in 2-column Wrap ---
+                  // --- Parameter fields ---
                   Wrap(
                     spacing: 12,
                     runSpacing: 4,
@@ -297,6 +319,12 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
                       _compactField(_endConfirmCtrl, 'End Confirm s'),
                       _compactField(_minEffortCtrl, 'Min Effort s'),
                       _compactField(_baselineWindowCtrl, 'Baseline Window s'),
+                      _compactField(
+                        _minPeakWattsCtrl,
+                        'Min Peak W',
+                        isDouble: true,
+                        optional: true,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -376,6 +404,7 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
     TextEditingController ctrl,
     String label, {
     bool isDouble = false,
+    bool optional = false,
   }) {
     return SizedBox(
       width: 140,
@@ -388,6 +417,7 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
             vertical: 8,
             horizontal: 8,
           ),
+          hintText: optional ? 'disabled' : null,
         ),
         keyboardType: TextInputType.numberWithOptions(decimal: isDouble),
         onChanged: (_) => _onFieldChanged(),
@@ -411,19 +441,13 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
     );
   }
 
-  static _Preset _detectPreset(AutoLapConfig cfg) {
-    if (_matches(cfg, AutoLapConfig.shortSprint())) return _Preset.shortSprint;
-    if (_matches(cfg, AutoLapConfig.flying200())) return _Preset.flying200;
-    if (_matches(cfg, AutoLapConfig.teamSprint())) return _Preset.teamSprint;
-    return _Preset.custom;
-  }
-
   static bool _matches(AutoLapConfig a, AutoLapConfig b) {
     return a.startDeltaWatts == b.startDeltaWatts &&
         a.startConfirmSeconds == b.startConfirmSeconds &&
         a.endDeltaWatts == b.endDeltaWatts &&
         a.endConfirmSeconds == b.endConfirmSeconds &&
         a.minEffortSeconds == b.minEffortSeconds &&
-        a.preEffortBaselineWindow == b.preEffortBaselineWindow;
+        a.preEffortBaselineWindow == b.preEffortBaselineWindow &&
+        a.minPeakWatts == b.minPeakWatts;
   }
 }

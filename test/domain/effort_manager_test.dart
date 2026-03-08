@@ -15,7 +15,7 @@ AutoLapConfig _cfg({
   int inWindow = 5,
 }) =>
     AutoLapConfig(
-      id: 'test',
+      id: 1,
       name: 'Test',
       startDeltaWatts: startDelta,
       startConfirmSeconds: startConfirm,

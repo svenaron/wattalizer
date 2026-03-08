@@ -29,7 +29,7 @@ class FakeRepository implements RideRepository {
   Map<String, Ride> ridesById = {};
   Map<String, MapCurve> ridePdcs = {};
   AutoLapConfig defaultConfigToReturn = const AutoLapConfig(
-    id: 'default',
+    id: 1,
     name: 'Default',
     startDeltaWatts: 200,
     endDeltaWatts: 100,
@@ -143,8 +143,13 @@ class FakeRepository implements RideRepository {
   @override
   Future<AutoLapConfig> getDefaultConfig() async => defaultConfigToReturn;
 
+  int _nextConfigId = 100;
+
   @override
-  Future<void> saveAutoLapConfig(AutoLapConfig config) async {}
+  Future<int> saveAutoLapConfig(AutoLapConfig config) async => _nextConfigId++;
+
+  @override
+  Future<bool> deleteAutoLapConfig(int id) async => true;
 
   @override
   Future<List<DeviceInfo>> getRememberedDevices() async => devicesToReturn;

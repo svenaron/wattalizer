@@ -19,6 +19,8 @@ class EffortEndedEvent extends AutoLapEvent {
     required this.endOffset,
     required this.isManual,
     required this.wasTooShort,
+    required this.wasTooWeak,
+    required this.peakWatts,
     required this.preEffortBaseline,
     required this.peakTrailingAvg,
   });
@@ -26,6 +28,8 @@ class EffortEndedEvent extends AutoLapEvent {
   final int endOffset;
   final bool isManual;
   final bool wasTooShort;
+  final bool wasTooWeak;
+  final double peakWatts;
   final double preEffortBaseline;
   final double peakTrailingAvg;
 }

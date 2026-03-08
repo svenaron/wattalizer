@@ -7,8 +7,6 @@ class Rides extends Table {
   DateTimeColumn get endTime => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   TextColumn get source => text()(); // 'recorded' or 'imported_tcx'
-  TextColumn get autoLapConfigId =>
-      text().nullable().references(AutolapConfigs, #id)();
   IntColumn get durationSeconds => integer()();
   IntColumn get activeDurationSeconds => integer()();
   RealColumn get avgPower => real()();
@@ -113,7 +111,7 @@ class Devices extends Table {
 
 @DataClassName('AutolapConfigRow')
 class AutolapConfigs extends Table {
-  TextColumn get id => text()();
+  IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   RealColumn get startDeltaWatts => real()();
   IntColumn get startConfirmSeconds =>
@@ -127,8 +125,6 @@ class AutolapConfigs extends Table {
       integer().withDefault(const Constant(15))();
   IntColumn get inEffortTrailingWindow =>
       integer().withDefault(const Constant(10))();
+  RealColumn get minPeakWatts => real().nullable()();
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
 }

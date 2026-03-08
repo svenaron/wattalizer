@@ -14,7 +14,7 @@ import 'package:wattalizer/presentation/providers/max_power_override_provider.da
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 import 'package:wattalizer/presentation/providers/theme_mode_provider.dart';
-import 'package:wattalizer/presentation/screens/autolap_config_screen.dart';
+import 'package:wattalizer/presentation/screens/autolap_config_list_screen.dart';
 import 'package:wattalizer/presentation/widgets/device_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -69,7 +69,9 @@ class _AutoLapSection extends ConsumerWidget {
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute<void>(builder: (_) => const AutoLapConfigScreen()),
+        MaterialPageRoute<void>(
+          builder: (_) => const AutoLapConfigListScreen(),
+        ),
       ),
     );
   }
@@ -216,7 +218,7 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
     try {
       final export = ref.read(exportServiceProvider);
       final configAsync = ref.read(autoLapConfigProvider);
-      final config = configAsync.value ?? AutoLapConfig.shortSprint();
+      final config = configAsync.value ?? AutoLapConfig.standingStart();
       final ioFile = File(file.path!);
       final name = file.name.toLowerCase();
 

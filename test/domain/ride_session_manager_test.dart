@@ -23,7 +23,7 @@ void main() {
     setUp(() {
       repo = _FakeRepository();
       config = const AutoLapConfig(
-        id: 'test',
+        id: 1,
         name: 'Test',
         startDeltaWatts: 200,
         startConfirmSeconds: 1,
@@ -449,7 +449,6 @@ void main() {
         final ride = await mgr.end();
 
         expect(ride.source, RideSource.recorded);
-        expect(ride.autoLapConfigId, config.id);
         expect(ride.endTime, isNotNull);
       });
 
@@ -666,14 +665,17 @@ class _FakeRepository implements RideRepository {
 
   @override
   Future<AutoLapConfig> getDefaultConfig() async => const AutoLapConfig(
-        id: 'default',
+        id: 1,
         name: 'Default',
         startDeltaWatts: 200,
         endDeltaWatts: 100,
       );
 
   @override
-  Future<void> saveAutoLapConfig(AutoLapConfig config) async {}
+  Future<int> saveAutoLapConfig(AutoLapConfig config) async => 1;
+
+  @override
+  Future<bool> deleteAutoLapConfig(int id) async => true;
 
   @override
   Future<List<DeviceInfo>> getRememberedDevices() async => [];
