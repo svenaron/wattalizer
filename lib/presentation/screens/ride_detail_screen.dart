@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:wattalizer/domain/models/historical_range.dart';
 import 'package:wattalizer/domain/models/ride.dart';
 import 'package:wattalizer/domain/models/ride_summary.dart';
+import 'package:wattalizer/domain/services/effort_manager.dart';
 import 'package:wattalizer/domain/services/export_service.dart';
 import 'package:wattalizer/presentation/providers/all_tags_provider.dart';
 import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
@@ -129,6 +130,7 @@ class _DetailViewState extends State<_DetailView> {
                           ? null
                           : e.effortNumber;
                     }),
+                    onDelete: () => _deleteEffort(ride, e.effortNumber),
                   ),
                 ),
               ),
@@ -197,6 +199,60 @@ class _DetailViewState extends State<_DetailView> {
     widget.ref.invalidate(rideListProvider);
     if (!mounted) return;
     Navigator.pop(context);
+  }
+
+  Future<void> _deleteEffort(Ride ride, int effortNumber) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Remove Effort $effortNumber?'),
+        content: const Text('This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final updated = EffortManager.removeEffort(ride.efforts, effortNumber);
+    final repo = widget.ref.read(rideRepositoryProvider);
+    await repo.saveEfforts(ride.id, updated);
+    final s = ride.summary;
+    await repo.updateRide(
+      ride.copyWith(
+        efforts: updated,
+        summary: RideSummary(
+          durationSeconds: s.durationSeconds,
+          activeDurationSeconds: s.activeDurationSeconds,
+          avgPower: s.avgPower,
+          maxPower: s.maxPower,
+          readingCount: s.readingCount,
+          effortCount: updated.length,
+          avgHeartRate: s.avgHeartRate,
+          maxHeartRate: s.maxHeartRate,
+          avgCadence: s.avgCadence,
+          avgLeftRightBalance: s.avgLeftRightBalance,
+        ),
+      ),
+    );
+
+    widget.ref
+      ..invalidate(rideDetailProvider(ride.id))
+      ..invalidate(rideListProvider)
+      ..invalidate(historicalRangeProvider);
+
+    setState(() => _expandedEffort = null);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Effort $effortNumber removed')),
+    );
   }
 
   static String _formatDate(DateTime dt) {

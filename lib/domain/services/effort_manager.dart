@@ -127,4 +127,29 @@ class EffortManager {
 
     return efforts;
   }
+
+  /// Returns a new list with the effort matching [effortNumber] removed.
+  /// Remaining efforts are renumbered from 1 and restSincePrevious is
+  /// recalculated from the adjacent offsets.
+  static List<Effort> removeEffort(List<Effort> efforts, int effortNumber) {
+    final remaining =
+        efforts.where((e) => e.effortNumber != effortNumber).toList();
+    return [
+      for (var i = 0; i < remaining.length; i++)
+        Effort(
+          id: remaining[i].id,
+          rideId: remaining[i].rideId,
+          effortNumber: i + 1,
+          startOffset: remaining[i].startOffset,
+          endOffset: remaining[i].endOffset,
+          type: remaining[i].type,
+          summary: remaining[i].summary.copyWith(
+                restSincePrevious: i == 0
+                    ? null
+                    : remaining[i].startOffset - remaining[i - 1].endOffset,
+              ),
+          mapCurve: remaining[i].mapCurve,
+        ),
+    ];
+  }
 }
