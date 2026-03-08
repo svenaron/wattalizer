@@ -110,9 +110,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                 ),
                 const VerticalDivider(thickness: 1, width: 1),
                 Expanded(
-                  child: IndexedStack(
-                    index: _selectedIndex,
-                    children: _screens,
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeLeft: true,
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: _screens,
+                    ),
                   ),
                 ),
               ],
