@@ -556,7 +556,7 @@ for i from 88 down to 0:
 Applied to: live effort curves, cached effort curves, derived ride-level PDC, historical best and worst envelopes.
 
 ### 7.4 Null Handling
-Null power readings (sensor dropout) are skipped in window averaging. A window containing nulls uses only the non-null readings for its average. A window of all nulls produces 0.
+Null power readings (sensor dropout) contribute 0W to window sums. A window containing nulls uses the full window size `d` as the denominator, so dropout seconds reduce the average proportionally. A window of all nulls produces 0. This prevents inflation of longer-duration values when nulls cluster near high-power readings.
 
 When computing the best window for each duration, track whether the winning window contained any nulls:
 
@@ -565,7 +565,7 @@ for each duration d (1..90):
   for each window ending at position n:
     nonNullCount = countSum[n] - countSum[n-d]
     if nonNullCount == 0: avg = 0
-    else: avg = (powerSum[n] - powerSum[n-d]) / nonNullCount
+    else: avg = (powerSum[n] - powerSum[n-d]) / d
     if avg > bestAvg[d-1]:
       bestAvg[d-1] = avg
       flags[d-1].hadNulls = (nonNullCount < d)

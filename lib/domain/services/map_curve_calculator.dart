@@ -48,7 +48,7 @@ class MapCurveCalculator {
 
           if (nonNull == 0) continue; // all-null window → 0, skip
 
-          final avg = (powerSum[end] - powerSum[start]) / nonNull;
+          final avg = (powerSum[end] - powerSum[start]) / d;
           if (avg > bestAvg) {
             bestAvg = avg;
             bestHadNulls = nonNull < d;
@@ -110,7 +110,7 @@ class MapCurveCalculator {
           final start = end - d;
           final nonNull = _countSum[end] - _countSum[start];
           if (nonNull == 0) continue;
-          final avg = (_powerSum[end] - _powerSum[start]) / nonNull;
+          final avg = (_powerSum[end] - _powerSum[start]) / d;
           if (avg > bestAvg) {
             bestAvg = avg;
             bestHadNulls = nonNull < d;
