@@ -1,3 +1,7 @@
+/// Hard cap on effort duration in seconds. MAP curve only covers 1–90s,
+/// so any effort longer than this provides no additional data.
+const int kMaxEffortSeconds = 90;
+
 /// MAP curve duration range: 1 to 90 seconds inclusive.
 const List<int> kMapDurations = [
   1,

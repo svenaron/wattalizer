@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:wattalizer/core/constants.dart';
 import 'package:wattalizer/domain/events/autolap_events.dart';
 import 'package:wattalizer/domain/models/autolap_config.dart';
 import 'package:wattalizer/domain/models/sensor_reading.dart';
@@ -98,6 +99,28 @@ class AutoLapDetector {
       case AutoLapState.inEffort:
         if (power != null) _peakWatts = max(_peakWatts ?? 0, power);
         _inEffortTrailing.add(power);
+
+        final elapsed = offset - _tentativeStartOffset;
+        if (elapsed >= kMaxEffortSeconds) {
+          _state = AutoLapState.idle;
+          final preEffortBaselineCap = _preEffortBaseline.average;
+          final peakTrailingAvgCap = _inEffortTrailing.average;
+          final peakCap = _peakWatts ?? 0;
+          _preEffortBaseline.clear();
+          _inEffortTrailing.clear();
+          _peakWatts = null;
+          return EffortEndedEvent(
+            startOffset: _tentativeStartOffset,
+            endOffset: offset,
+            isManual: false,
+            wasTooShort: false,
+            wasTooWeak:
+                config.minPeakWatts != null && peakCap < config.minPeakWatts!,
+            peakWatts: peakCap,
+            preEffortBaseline: preEffortBaselineCap,
+            peakTrailingAvg: peakTrailingAvgCap,
+          );
+        }
 
         if (power != null &&
             power < _inEffortTrailing.average - config.endDeltaWatts) {
