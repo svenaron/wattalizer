@@ -84,6 +84,7 @@ class _DetailView extends StatefulWidget {
 class _DetailViewState extends State<_DetailView> {
   int? _expandedEffort;
   final Map<String, GlobalKey> _effortKeys = {};
+  final Map<String, GlobalKey> _effortExpandedKeys = {};
 
   @override
   void initState() {
@@ -95,7 +96,7 @@ class _DetailViewState extends State<_DetailView> {
       if (match != null) {
         _expandedEffort = match.effortNumber;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final key = _effortKeys[match.id];
+          final key = _effortExpandedKeys[match.id];
           if (key?.currentContext != null) {
             unawaited(
               Scrollable.ensureVisible(
@@ -113,12 +114,15 @@ class _DetailViewState extends State<_DetailView> {
 
   void _focusEffort(int effortNumber) {
     setState(() => _expandedEffort = effortNumber);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Delay until AnimatedCrossFade (250 ms) has finished expanding before
+    // scrolling, so ensureVisible measures the full expanded height.
+    Future.delayed(const Duration(milliseconds: 280), () {
+      if (!mounted) return;
       final effort = widget.ride.efforts
           .where((e) => e.effortNumber == effortNumber)
           .firstOrNull;
       if (effort == null) return;
-      final key = _effortKeys[effort.id];
+      final key = _effortExpandedKeys[effort.id];
       if (key?.currentContext != null) {
         unawaited(
           Scrollable.ensureVisible(
@@ -193,6 +197,7 @@ class _DetailViewState extends State<_DetailView> {
               // Effort cards
               ...ride.efforts.map((e) {
                 _effortKeys.putIfAbsent(e.id, GlobalKey.new);
+                _effortExpandedKeys.putIfAbsent(e.id, GlobalKey.new);
                 return Padding(
                   key: _effortKeys[e.id],
                   padding: const EdgeInsets.only(bottom: 8),
@@ -206,6 +211,7 @@ class _DetailViewState extends State<_DetailView> {
                           : e.effortNumber;
                     }),
                     onDelete: () => _deleteEffort(ride, e.effortNumber),
+                    expandedBodyKey: _effortExpandedKeys[e.id],
                   ),
                 );
               }),
