@@ -25,7 +25,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: actions/cache@v4
+        id: gen-cache
+        with:
+          path: |
+            lib/data/database/database.g.dart
+            .dart_tool/build/
+          key: buildrunner-${{ hashFiles('pubspec.lock', 'lib/data/database/tables.dart', 'lib/data/database/database.dart') }}
+
       - name: Run code generation
+        if: steps.gen-cache.outputs.cache-hit != 'true'
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Linux release
@@ -51,7 +60,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: actions/cache@v4
+        id: gen-cache
+        with:
+          path: |
+            lib/data/database/database.g.dart
+            .dart_tool/build/
+          key: buildrunner-${{ hashFiles('pubspec.lock', 'lib/data/database/tables.dart', 'lib/data/database/database.dart') }}
+
       - name: Run code generation
+        if: steps.gen-cache.outputs.cache-hit != 'true'
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows release
@@ -79,7 +97,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: actions/cache@v4
+        id: gen-cache
+        with:
+          path: |
+            lib/data/database/database.g.dart
+            .dart_tool/build/
+          key: buildrunner-${{ hashFiles('pubspec.lock', 'lib/data/database/tables.dart', 'lib/data/database/database.dart') }}
+
       - name: Run code generation
+        if: steps.gen-cache.outputs.cache-hit != 'true'
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build macOS release
@@ -133,7 +160,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: actions/cache@v4
+        id: gen-cache
+        with:
+          path: |
+            lib/data/database/database.g.dart
+            .dart_tool/build/
+          key: buildrunner-${{ hashFiles('pubspec.lock', 'lib/data/database/tables.dart', 'lib/data/database/database.dart') }}
+
       - name: Run code generation
+        if: steps.gen-cache.outputs.cache-hit != 'true'
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build Android APK
@@ -155,7 +191,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: actions/cache@v4
+        id: gen-cache
+        with:
+          path: |
+            lib/data/database/database.g.dart
+            .dart_tool/build/
+          key: buildrunner-${{ hashFiles('pubspec.lock', 'lib/data/database/tables.dart', 'lib/data/database/database.dart') }}
+
       - name: Run code generation
+        if: steps.gen-cache.outputs.cache-hit != 'true'
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Build iOS (no codesign)
