@@ -147,11 +147,6 @@ jobs:
           key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - uses: actions/cache@v4
-        with:
-          path: /usr/local/lib/android/sdk/cmake
-          key: android-cmake-3.22.1
-
       - name: Pre-install Android CMake
         run: >
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
