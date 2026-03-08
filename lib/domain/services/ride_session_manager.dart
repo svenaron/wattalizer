@@ -168,7 +168,7 @@ class RideSessionManager {
       _liveEffortCalc = null; // dispose — batch replaces it
       _latestLiveCurve = null;
 
-      if (event.wasTooShort) return;
+      if (event.wasTooShort || event.wasTooWeak) return;
 
       final effort = _effortManager.createEffort(
         rideId: _rideId,
@@ -228,7 +228,6 @@ class RideSessionManager {
       startTime: _startTime,
       endTime: endTime,
       source: RideSource.recorded,
-      autoLapConfigId: _config.id,
       efforts: _efforts,
       summary: summary,
     );

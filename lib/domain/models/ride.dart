@@ -14,7 +14,6 @@ class Ride {
     this.endTime,
     this.tags = const [],
     this.notes,
-    this.autoLapConfigId,
     this.efforts = const [],
   });
 
@@ -30,7 +29,6 @@ class Ride {
         'imported_fit' => RideSource.importedFit,
         _ => RideSource.importedTcx,
       },
-      autoLapConfigId: row.autoLapConfigId,
       efforts: efforts,
       summary: RideSummary(
         durationSeconds: row.durationSeconds,
@@ -58,7 +56,6 @@ class Ride {
         RideSource.importedTcx => 'imported_tcx',
         RideSource.importedFit => 'imported_fit',
       },
-      autoLapConfigId: Value.absentIfNull(autoLapConfigId),
       durationSeconds: summary.durationSeconds,
       activeDurationSeconds: summary.activeDurationSeconds,
       avgPower: summary.avgPower,
@@ -77,7 +74,6 @@ class Ride {
     String? notes,
     List<Effort>? efforts,
     RideSummary? summary,
-    String? autoLapConfigId,
   }) {
     return Ride(
       id: id,
@@ -86,7 +82,6 @@ class Ride {
       tags: tags ?? this.tags,
       notes: notes ?? this.notes,
       source: source,
-      autoLapConfigId: autoLapConfigId ?? this.autoLapConfigId,
       efforts: efforts ?? this.efforts,
       summary: summary ?? this.summary,
     );
@@ -98,7 +93,6 @@ class Ride {
   final List<String> tags;
   final String? notes;
   final RideSource source;
-  final String? autoLapConfigId;
   final List<Effort> efforts; // loaded eagerly on detail, empty on list
   final RideSummary summary;
 }

@@ -141,7 +141,6 @@ class LocalRideRepository implements RideRepository {
           RidesCompanion(
             notes: Value(ride.notes),
             effortCount: Value(ride.summary.effortCount),
-            autoLapConfigId: Value.absentIfNull(ride.autoLapConfigId),
           ),
         );
 
@@ -595,7 +594,7 @@ class LocalRideRepository implements RideRepository {
           .getSingleOrNull();
       return row != null
           ? AutoLapConfig.fromRow(row)
-          : AutoLapConfig.flying200();
+          : AutoLapConfig.standingStart();
     } catch (e) {
       throw DatabaseError(
         operation: 'get_default_config',
@@ -605,21 +604,69 @@ class LocalRideRepository implements RideRepository {
   }
 
   @override
-  Future<void> saveAutoLapConfig(AutoLapConfig config) async {
+  Future<int> saveAutoLapConfig(AutoLapConfig config) async {
     try {
-      await _db.transaction(() async {
+      return await _db.transaction(() async {
         if (config.isDefault) {
           await (_db.update(_db.autolapConfigs)
                 ..where((t) => t.isDefault.equals(true)))
               .write(const AutolapConfigsCompanion(isDefault: Value(false)));
         }
-        await _db
-            .into(_db.autolapConfigs)
-            .insertOnConflictUpdate(config.toCompanion());
+        if (config.id == null) {
+          // Insert: auto-increment assigns ID
+          return _db.into(_db.autolapConfigs).insert(config.toCompanion());
+        } else {
+          // Update by ID
+          await (_db.update(_db.autolapConfigs)
+                ..where((t) => t.id.equals(config.id!)))
+              .write(config.toCompanion());
+          return config.id!;
+        }
       });
     } catch (e) {
       throw DatabaseError(
         operation: 'save_autolap_config',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  @override
+  Future<bool> deleteAutoLapConfig(int id) async {
+    try {
+      return await _db.transaction(() async {
+        final count = await _db
+            .customSelect('SELECT COUNT(*) AS c FROM autolap_configs')
+            .getSingle();
+        if (count.read<int>('c') <= 1) return false;
+
+        // If deleting the default, promote another config
+        final row = await (_db.select(
+          _db.autolapConfigs,
+        )..where((t) => t.id.equals(id)))
+            .getSingleOrNull();
+        if (row != null && row.isDefault) {
+          final other = await (_db.select(_db.autolapConfigs)
+                ..where((t) => t.id.equals(id).not())
+                ..orderBy([(t) => OrderingTerm.asc(t.name)])
+                ..limit(1))
+              .getSingleOrNull();
+          if (other != null) {
+            await (_db.update(_db.autolapConfigs)
+                  ..where((t) => t.id.equals(other.id)))
+                .write(const AutolapConfigsCompanion(isDefault: Value(true)));
+          }
+        }
+
+        await (_db.delete(
+          _db.autolapConfigs,
+        )..where((t) => t.id.equals(id)))
+            .go();
+        return true;
+      });
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'delete_autolap_config',
         detail: e.toString(),
       );
     }

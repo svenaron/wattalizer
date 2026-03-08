@@ -5,7 +5,6 @@ void main() {
   group('AutoLapConfig defaults', () {
     test('isDefault is false by default', () {
       const cfg = AutoLapConfig(
-        id: 'c1',
         name: 'Test',
         startDeltaWatts: 100,
         endDeltaWatts: 80,
@@ -20,15 +19,15 @@ void main() {
     });
   });
 
-  group('shortSprint preset', () {
-    final cfg = AutoLapConfig.shortSprint();
+  group('standingStart preset', () {
+    final cfg = AutoLapConfig.standingStart();
 
-    test('has expected id', () {
-      expect(cfg.id, 'preset_short_sprint');
+    test('has null id (unsaved)', () {
+      expect(cfg.id, isNull);
     });
 
     test('has high start delta', () {
-      expect(cfg.startDeltaWatts, 200);
+      expect(cfg.startDeltaWatts, 350);
     });
 
     test('has short confirm time', () {
@@ -39,16 +38,24 @@ void main() {
       expect(cfg.preEffortBaselineWindow, 10);
       expect(cfg.inEffortTrailingWindow, 5);
     });
-  });
 
-  group('flying200 preset', () {
-    final cfg = AutoLapConfig.flying200();
-
-    test('has expected id', () {
-      expect(cfg.id, 'preset_flying_200');
+    test('has min peak watts', () {
+      expect(cfg.minPeakWatts, 700);
     });
 
-    test('has medium start delta', () {
+    test('has correct end delta', () {
+      expect(cfg.endDeltaWatts, 250);
+    });
+  });
+
+  group('flyingStart preset', () {
+    final cfg = AutoLapConfig.flyingStart();
+
+    test('has null id (unsaved)', () {
+      expect(cfg.id, isNull);
+    });
+
+    test('has low start delta for wind-up entry', () {
       expect(cfg.startDeltaWatts, 150);
     });
 
@@ -59,32 +66,45 @@ void main() {
     test('min effort is 5s', () {
       expect(cfg.minEffortSeconds, 5);
     });
+
+    test('has min peak watts', () {
+      expect(cfg.minPeakWatts, 700);
+    });
   });
 
-  group('teamSprint preset', () {
-    final cfg = AutoLapConfig.teamSprint();
+  group('broad preset', () {
+    final cfg = AutoLapConfig.broad();
 
-    test('has expected id', () {
-      expect(cfg.id, 'preset_team_sprint');
+    test('has null id (unsaved)', () {
+      expect(cfg.id, isNull);
     });
 
-    test('has lower start delta for sustained efforts', () {
+    test('has lower start delta', () {
       expect(cfg.startDeltaWatts, 120);
     });
 
-    test('has long min effort', () {
-      expect(cfg.minEffortSeconds, 10);
+    test('has short min effort', () {
+      expect(cfg.minEffortSeconds, 2);
     });
 
-    test('uses wider windows', () {
-      expect(cfg.preEffortBaselineWindow, 20);
-      expect(cfg.inEffortTrailingWindow, 15);
+    test('uses standard windows', () {
+      expect(cfg.preEffortBaselineWindow, 15);
+      expect(cfg.inEffortTrailingWindow, 8);
+    });
+
+    test('has min peak watts', () {
+      expect(cfg.minPeakWatts, 400);
     });
   });
 
   group('copyWith', () {
     test('preserves id and overrides name', () {
-      final cfg = AutoLapConfig.flying200();
+      const cfg = AutoLapConfig(
+        id: 1,
+        name: 'Flying Start',
+        startDeltaWatts: 150,
+        endDeltaWatts: 150,
+      );
       final copy = cfg.copyWith(name: 'Custom 200');
       expect(copy.id, cfg.id);
       expect(copy.name, 'Custom 200');
@@ -92,16 +112,26 @@ void main() {
     });
 
     test('can mark as default', () {
-      final cfg = AutoLapConfig.shortSprint();
+      const cfg = AutoLapConfig(
+        id: 1,
+        name: 'Standing Start',
+        startDeltaWatts: 350,
+        endDeltaWatts: 250,
+      );
       final copy = cfg.copyWith(isDefault: true);
       expect(copy.isDefault, isTrue);
     });
-  });
 
-  group('custom id', () {
-    test('shortSprint accepts custom id', () {
-      final cfg = AutoLapConfig.shortSprint(id: 'my_id');
-      expect(cfg.id, 'my_id');
+    test('can clear minPeakWatts to null', () {
+      final cfg = AutoLapConfig.standingStart();
+      final copy = cfg.copyWith(minPeakWatts: null);
+      expect(copy.minPeakWatts, isNull);
+    });
+
+    test('preserves minPeakWatts when not passed', () {
+      final cfg = AutoLapConfig.standingStart();
+      final copy = cfg.copyWith(name: 'X');
+      expect(copy.minPeakWatts, cfg.minPeakWatts);
     });
   });
 }

@@ -82,7 +82,9 @@ class EffortManager {
       if (event is EffortStartedEvent) {
         pendingStartOffset = event.startOffset;
         pendingIsManual = event.isManual;
-      } else if (event is EffortEndedEvent && !event.wasTooShort) {
+      } else if (event is EffortEndedEvent &&
+          !event.wasTooShort &&
+          !event.wasTooWeak) {
         if (pendingStartOffset != null) {
           final effort = createEffort(
             rideId: rideId,
@@ -107,6 +109,7 @@ class EffortManager {
     );
     if (finalEvent is EffortEndedEvent &&
         !finalEvent.wasTooShort &&
+        !finalEvent.wasTooWeak &&
         pendingStartOffset != null) {
       final effort = createEffort(
         rideId: rideId,

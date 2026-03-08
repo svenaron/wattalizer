@@ -52,7 +52,7 @@ abstract class RideRepository {
 
   Future<void> saveRide(Ride ride);
 
-  /// Updates tags, notes, effortCount, and autoLapConfigId.
+  /// Updates tags, notes, and effortCount.
   Future<void> updateRide(Ride ride);
 
   Future<Ride?> getRide(String id);
@@ -117,7 +117,12 @@ abstract class RideRepository {
   // --- AutoLap Config ---
   Future<List<AutoLapConfig>> getAutoLapConfigs();
   Future<AutoLapConfig> getDefaultConfig();
-  Future<void> saveAutoLapConfig(AutoLapConfig config);
+
+  /// Returns the assigned or existing ID of the saved config.
+  Future<int> saveAutoLapConfig(AutoLapConfig config);
+
+  /// Returns false if this is the last config remaining (delete refused).
+  Future<bool> deleteAutoLapConfig(int id);
 
   // --- Devices ---
   Future<List<DeviceInfo>> getRememberedDevices();

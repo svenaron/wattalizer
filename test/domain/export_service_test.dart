@@ -21,7 +21,7 @@ void main() {
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('export_service_test_');
     config = const AutoLapConfig(
-      id: 'test',
+      id: 1,
       name: 'Test',
       startDeltaWatts: 200,
       startConfirmSeconds: 1,
@@ -111,7 +111,7 @@ void main() {
       'valid TCX → readings re-detected into efforts when above threshold',
       () async {
         const lowConfig = AutoLapConfig(
-          id: 'low',
+          id: 2,
           name: 'Low',
           startDeltaWatts: 50,
           startConfirmSeconds: 1,
@@ -900,13 +900,15 @@ class _FakeRepository implements RideRepository {
   Future<List<AutoLapConfig>> getAutoLapConfigs() async => [];
   @override
   Future<AutoLapConfig> getDefaultConfig() async => const AutoLapConfig(
-        id: 'default',
+        id: 1,
         name: 'Default',
         startDeltaWatts: 200,
         endDeltaWatts: 100,
       );
   @override
-  Future<void> saveAutoLapConfig(AutoLapConfig config) async {}
+  Future<int> saveAutoLapConfig(AutoLapConfig config) async => 1;
+  @override
+  Future<bool> deleteAutoLapConfig(int id) async => true;
   @override
   Future<List<DeviceInfo>> getRememberedDevices() async => [];
   @override

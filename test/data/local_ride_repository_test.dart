@@ -641,54 +641,149 @@ void main() {
   // --- AutoLap config ---
 
   group('autoLap configs', () {
-    test('getDefaultConfig returns flying200 when table is empty', () async {
-      final config = await repo.getDefaultConfig();
-      expect(config.id, 'preset_flying_200');
-      expect(config.name, 'Flying 200m');
+    setUp(() async {
+      // Clear seeded configs so tests start with a blank slate.
+      await db.delete(db.autolapConfigs).go();
     });
 
-    test('saveAutoLapConfig upsert round-trip', () async {
+    test('getDefaultConfig returns standingStart values when table is empty',
+        () async {
+      final config = await repo.getDefaultConfig();
+      // No rows in table → fallback to AutoLapConfig.standingStart()
+      expect(config.name, 'Standing Start');
+      expect(config.startDeltaWatts, 350);
+    });
+
+    test('saveAutoLapConfig insert assigns auto-increment id', () async {
       const config = AutoLapConfig(
-        id: 'cfg1',
         name: 'My Config',
         startDeltaWatts: 180,
         endDeltaWatts: 130,
       );
-      await repo.saveAutoLapConfig(config);
+      final id = await repo.saveAutoLapConfig(config);
 
+      expect(id, isPositive);
       final configs = await repo.getAutoLapConfigs();
       expect(configs.length, 1);
       expect(configs.first.name, 'My Config');
       expect(configs.first.startDeltaWatts, 180.0);
+      expect(configs.first.id, id);
+    });
+
+    test('saveAutoLapConfig update preserves id', () async {
+      const config = AutoLapConfig(
+        name: 'Config 1',
+        startDeltaWatts: 150,
+        endDeltaWatts: 100,
+      );
+      final id = await repo.saveAutoLapConfig(config);
+      final updated = AutoLapConfig(
+        id: id,
+        name: 'Config 1 Updated',
+        startDeltaWatts: 160,
+        endDeltaWatts: 110,
+      );
+      final returnedId = await repo.saveAutoLapConfig(updated);
+
+      expect(returnedId, id);
+      final configs = await repo.getAutoLapConfigs();
+      expect(configs.length, 1);
+      expect(configs.first.name, 'Config 1 Updated');
     });
 
     test(
       'saveAutoLapConfig clears previous default when setting new one',
       () async {
         const config1 = AutoLapConfig(
-          id: 'cfg1',
           name: 'Config 1',
           startDeltaWatts: 150,
           endDeltaWatts: 100,
           isDefault: true,
         );
         const config2 = AutoLapConfig(
-          id: 'cfg2',
           name: 'Config 2',
           startDeltaWatts: 200,
           endDeltaWatts: 150,
           isDefault: true,
         );
-        await repo.saveAutoLapConfig(config1);
+        final id1 = await repo.saveAutoLapConfig(config1);
         await repo.saveAutoLapConfig(config2);
 
         final defaultConfig = await repo.getDefaultConfig();
-        expect(defaultConfig.id, 'cfg2');
+        expect(defaultConfig.name, 'Config 2');
 
         // config1 should no longer be default
         final all = await repo.getAutoLapConfigs();
-        expect(all.firstWhere((c) => c.id == 'cfg1').isDefault, isFalse);
+        expect(all.firstWhere((c) => c.id == id1).isDefault, isFalse);
       },
     );
+  });
+
+  group('deleteAutoLapConfig', () {
+    setUp(() async {
+      await db.delete(db.autolapConfigs).go();
+    });
+
+    test('deletes one of two configs and returns true', () async {
+      final id1 = await repo.saveAutoLapConfig(
+        const AutoLapConfig(
+          name: 'Config A',
+          startDeltaWatts: 150,
+          endDeltaWatts: 100,
+        ),
+      );
+      await repo.saveAutoLapConfig(
+        const AutoLapConfig(
+          name: 'Config B',
+          startDeltaWatts: 200,
+          endDeltaWatts: 150,
+        ),
+      );
+
+      final result = await repo.deleteAutoLapConfig(id1);
+      expect(result, isTrue);
+      final all = await repo.getAutoLapConfigs();
+      expect(all.length, 1);
+      expect(all.first.name, 'Config B');
+    });
+
+    test('promotes another config to default when deleting the default',
+        () async {
+      final id1 = await repo.saveAutoLapConfig(
+        const AutoLapConfig(
+          name: 'Alpha',
+          startDeltaWatts: 150,
+          endDeltaWatts: 100,
+          isDefault: true,
+        ),
+      );
+      await repo.saveAutoLapConfig(
+        const AutoLapConfig(
+          name: 'Beta',
+          startDeltaWatts: 200,
+          endDeltaWatts: 150,
+        ),
+      );
+
+      final result = await repo.deleteAutoLapConfig(id1);
+      expect(result, isTrue);
+      final defaultConfig = await repo.getDefaultConfig();
+      expect(defaultConfig.name, 'Beta');
+    });
+
+    test('returns false when deleting the last config', () async {
+      final id = await repo.saveAutoLapConfig(
+        const AutoLapConfig(
+          name: 'Only Config',
+          startDeltaWatts: 150,
+          endDeltaWatts: 100,
+        ),
+      );
+
+      final result = await repo.deleteAutoLapConfig(id);
+      expect(result, isFalse);
+      final all = await repo.getAutoLapConfigs();
+      expect(all.length, 1);
+    });
   });
 }

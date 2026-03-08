@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:wattalizer/domain/events/autolap_events.dart';
 import 'package:wattalizer/domain/models/autolap_config.dart';
 import 'package:wattalizer/domain/models/sensor_reading.dart';
@@ -18,6 +20,7 @@ class AutoLapDetector {
   int _tentativeEndOffset = 0;
   int _confirmCount = 0;
   int _dropoutCount = 0;
+  double? _peakWatts;
 
   AutoLapState get currentState => _state;
   double get currentBaseline => _preEffortBaseline.average;
@@ -45,6 +48,7 @@ class AutoLapDetector {
           // Immediately confirm if startConfirmSeconds == 1.
           if (_confirmCount >= config.startConfirmSeconds) {
             _state = AutoLapState.inEffort;
+            _peakWatts = power;
             _inEffortTrailing
               ..clear()
               ..add(power);
@@ -79,6 +83,7 @@ class AutoLapDetector {
 
         if (_confirmCount >= config.startConfirmSeconds) {
           _state = AutoLapState.inEffort;
+          _peakWatts = power;
           _inEffortTrailing
             ..clear()
             ..add(power);
@@ -91,6 +96,7 @@ class AutoLapDetector {
         return null;
 
       case AutoLapState.inEffort:
+        if (power != null) _peakWatts = max(_peakWatts ?? 0, power);
         _inEffortTrailing.add(power);
 
         if (power != null &&
@@ -104,8 +110,10 @@ class AutoLapDetector {
             _state = AutoLapState.idle;
             final preEffortBaseline = _preEffortBaseline.average;
             final peakTrailingAvg = _inEffortTrailing.average;
+            final peak = _peakWatts ?? 0;
             _preEffortBaseline.clear();
             _inEffortTrailing.clear();
+            _peakWatts = null;
 
             final duration = _tentativeEndOffset - _tentativeStartOffset;
             return EffortEndedEvent(
@@ -113,6 +121,9 @@ class AutoLapDetector {
               endOffset: _tentativeEndOffset,
               isManual: false,
               wasTooShort: duration < config.minEffortSeconds,
+              wasTooWeak:
+                  config.minPeakWatts != null && peak < config.minPeakWatts!,
+              peakWatts: peak,
               preEffortBaseline: preEffortBaseline,
               peakTrailingAvg: peakTrailingAvg,
             );
@@ -139,17 +150,20 @@ class AutoLapDetector {
           _state = AutoLapState.idle;
           final preEffortBaseline = _preEffortBaseline.average;
           final peakTrailingAvg = _inEffortTrailing.average;
+          final peak = _peakWatts ?? 0;
           _preEffortBaseline.clear();
           _inEffortTrailing.clear();
+          _peakWatts = null;
 
           final duration = _tentativeEndOffset - _tentativeStartOffset;
-          final tooShort = duration < config.minEffortSeconds;
-
           return EffortEndedEvent(
             startOffset: _tentativeStartOffset,
             endOffset: _tentativeEndOffset,
             isManual: false,
-            wasTooShort: tooShort,
+            wasTooShort: duration < config.minEffortSeconds,
+            wasTooWeak:
+                config.minPeakWatts != null && peak < config.minPeakWatts!,
+            peakWatts: peak,
             preEffortBaseline: preEffortBaseline,
             peakTrailingAvg: peakTrailingAvg,
           );
@@ -190,11 +204,14 @@ class AutoLapDetector {
           endOffset: currentOffset,
           isManual: true,
           wasTooShort: false,
+          wasTooWeak: false,
+          peakWatts: _peakWatts ?? 0,
           preEffortBaseline: _preEffortBaseline.average,
           peakTrailingAvg: _inEffortTrailing.average,
         );
         _preEffortBaseline.clear();
         _inEffortTrailing.clear();
+        _peakWatts = null;
         _tentativeStartOffset = currentOffset;
         final startEvent = EffortStartedEvent(
           startOffset: currentOffset,
@@ -207,14 +224,18 @@ class AutoLapDetector {
         _state = AutoLapState.idle;
         final peakTrailingAvg = _inEffortTrailing.average;
         final preEffortBaseline = _preEffortBaseline.average;
+        final peak = _peakWatts ?? 0;
         _preEffortBaseline.clear();
         _inEffortTrailing.clear();
+        _peakWatts = null;
         return [
           EffortEndedEvent(
             startOffset: _tentativeStartOffset,
             endOffset: _tentativeEndOffset,
             isManual: true,
             wasTooShort: false,
+            wasTooWeak: false,
+            peakWatts: peak,
             preEffortBaseline: preEffortBaseline,
             peakTrailingAvg: peakTrailingAvg,
           ),
@@ -231,21 +252,31 @@ class AutoLapDetector {
         return null;
       case AutoLapState.inEffort:
         _state = AutoLapState.idle;
+        final peakEnd = _peakWatts ?? 0;
+        _peakWatts = null;
         return EffortEndedEvent(
           startOffset: _tentativeStartOffset,
           endOffset: currentOffset,
           isManual: false,
           wasTooShort: false,
+          wasTooWeak:
+              config.minPeakWatts != null && peakEnd < config.minPeakWatts!,
+          peakWatts: peakEnd,
           preEffortBaseline: _preEffortBaseline.average,
           peakTrailingAvg: _inEffortTrailing.average,
         );
       case AutoLapState.pendingEnd:
         _state = AutoLapState.idle;
+        final peakPend = _peakWatts ?? 0;
+        _peakWatts = null;
         return EffortEndedEvent(
           startOffset: _tentativeStartOffset,
           endOffset: _tentativeEndOffset,
           isManual: false,
           wasTooShort: false,
+          wasTooWeak:
+              config.minPeakWatts != null && peakPend < config.minPeakWatts!,
+          peakWatts: peakPend,
           preEffortBaseline: _preEffortBaseline.average,
           peakTrailingAvg: _inEffortTrailing.average,
         );
@@ -258,5 +289,6 @@ class AutoLapDetector {
     _inEffortTrailing.clear();
     _confirmCount = 0;
     _dropoutCount = 0;
+    _peakWatts = null;
   }
 }

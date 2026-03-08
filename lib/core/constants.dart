@@ -97,14 +97,15 @@ const int kMapDurationCount = 90;
 
 // --- Default AutoLap config values (spec §6.5) ---
 
-const double kDefaultStartDeltaWatts = 150;
+const double kDefaultStartDeltaWatts = 300;
 const int kDefaultStartConfirmSeconds = 2;
 const int kDefaultStartDropoutTolerance = 1;
-const double kDefaultEndDeltaWatts = 120;
+const double kDefaultEndDeltaWatts = 200;
 const int kDefaultEndConfirmSeconds = 5;
 const int kDefaultMinEffortSeconds = 3;
 const int kDefaultPreEffortBaselineWindow = 15;
 const int kDefaultInEffortTrailingWindow = 10;
+const double? kDefaultMinPeakWatts = null;
 
 // --- UI / BLE timing constants ---
 
