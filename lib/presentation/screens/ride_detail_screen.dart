@@ -12,10 +12,12 @@ import 'package:wattalizer/presentation/providers/all_tags_provider.dart';
 import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_detail_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
+import 'package:wattalizer/presentation/providers/ride_readings_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 import 'package:wattalizer/presentation/screens/redetect_preview_sheet.dart';
 import 'package:wattalizer/presentation/widgets/effort_card.dart';
 import 'package:wattalizer/presentation/widgets/effort_timeline.dart';
+import 'package:wattalizer/presentation/widgets/ride_power_chart.dart';
 import 'package:wattalizer/presentation/widgets/tag_input.dart';
 
 class RideDetailScreen extends ConsumerWidget {
@@ -110,6 +112,26 @@ class _DetailViewState extends State<_DetailView> {
     }
   }
 
+  void _focusEffort(int effortNumber) {
+    setState(() => _expandedEffort = effortNumber);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final effort = widget.ride.efforts
+          .where((e) => e.effortNumber == effortNumber)
+          .firstOrNull;
+      if (effort == null) return;
+      final key = _effortKeys[effort.id];
+      if (key?.currentContext != null) {
+        unawaited(
+          Scrollable.ensureVisible(
+            key!.currentContext!,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          ),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final ride = widget.ride;
@@ -144,6 +166,45 @@ class _DetailViewState extends State<_DetailView> {
             // Summary stats
             _SummaryGrid(s: s),
             const SizedBox(height: 16),
+
+            // Power-over-time chart
+            Consumer(
+              builder: (ctx, ref, _) {
+                final readingsAsync = ref.watch(rideReadingsProvider(ride.id));
+                return readingsAsync.when(
+                  loading: () => const SizedBox(
+                    height: 180,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (readings) {
+                    if (readings.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Power',
+                          style: Theme.of(ctx).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        RidePowerChart(
+                          readings: readings,
+                          efforts: ride.efforts,
+                          totalDurationSeconds: s.durationSeconds,
+                          onEffortDoubleTapped:
+                              ride.efforts.isEmpty ? null : _focusEffort,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
 
             // Effort timeline
             if (ride.efforts.isNotEmpty) ...[
