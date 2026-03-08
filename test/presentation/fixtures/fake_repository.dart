@@ -28,6 +28,7 @@ class FakeRepository implements RideRepository {
   List<DeviceInfo> devicesToReturn = [];
   Map<String, Ride> ridesById = {};
   Map<String, MapCurve> ridePdcs = {};
+  Map<String, List<Effort>> effortsByRide = {};
   AutoLapConfig defaultConfigToReturn = const AutoLapConfig(
     id: 1,
     name: 'Default',
@@ -94,7 +95,8 @@ class FakeRepository implements RideRepository {
   }
 
   @override
-  Future<List<Effort>> getEfforts(String rideId) async => [];
+  Future<List<Effort>> getEfforts(String rideId) async =>
+      effortsByRide[rideId] ?? [];
 
   @override
   Future<void> saveEfforts(String rideId, List<Effort> efforts) async {
