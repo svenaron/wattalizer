@@ -11,6 +11,7 @@ class EffortCard extends StatelessWidget {
     this.historicalRange,
     this.isExpanded = false,
     this.onToggle,
+    this.onDelete,
     super.key,
   });
 
@@ -18,6 +19,7 @@ class EffortCard extends StatelessWidget {
   final HistoricalRange? historicalRange;
   final bool isExpanded;
   final VoidCallback? onToggle;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +90,24 @@ class EffortCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Effort ${effort.effortNumber}',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Effort ${effort.effortNumber}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              if (onDelete != null)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Remove effort',
+                  onPressed: onDelete,
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           MapCurveChart(
