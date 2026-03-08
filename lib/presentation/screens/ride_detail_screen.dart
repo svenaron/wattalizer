@@ -12,11 +12,13 @@ import 'package:wattalizer/presentation/providers/all_tags_provider.dart';
 import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_detail_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
+import 'package:wattalizer/presentation/providers/ride_pdc_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_readings_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_repository_provider.dart';
 import 'package:wattalizer/presentation/screens/redetect_preview_sheet.dart';
 import 'package:wattalizer/presentation/widgets/effort_card.dart';
 import 'package:wattalizer/presentation/widgets/effort_timeline.dart';
+import 'package:wattalizer/presentation/widgets/map_curve_chart.dart';
 import 'package:wattalizer/presentation/widgets/tag_input.dart';
 
 class RideDetailScreen extends ConsumerWidget {
@@ -165,6 +167,9 @@ class _DetailViewState extends State<_DetailView> {
             // Summary stats
             _SummaryGrid(s: s),
             const SizedBox(height: 16),
+
+            // Ride PDC chart
+            _RidePdcSection(rideId: ride.id),
 
             // Effort timeline with power trace
             if (ride.efforts.isNotEmpty) ...[
@@ -402,6 +407,37 @@ class _SummaryGrid extends StatelessWidget {
     final m = seconds ~/ 60;
     final s = seconds % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ride PDC chart section
+// ---------------------------------------------------------------------------
+
+class _RidePdcSection extends ConsumerWidget {
+  const _RidePdcSection({required this.rideId});
+
+  final String rideId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pdcAsync = ref.watch(ridePdcProvider(rideId));
+    final rangeAsync = ref.watch(historicalRangeProvider);
+    final pdc = pdcAsync.asData?.value;
+    if (pdc == null) return const SizedBox.shrink();
+    final range = rangeAsync.asData?.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Power Curve',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        MapCurveChart(curve: pdc, historicalRange: range),
+        const SizedBox(height: 16),
+      ],
+    );
   }
 }
 
