@@ -101,6 +101,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             body: Row(
               children: [
                 NavigationRail(
+                  minWidth: 64,
                   selectedIndex: _selectedIndex,
                   onDestinationSelected: (i) =>
                       setState(() => _selectedIndex = i),
