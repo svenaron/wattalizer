@@ -12,6 +12,7 @@ class EffortCard extends StatelessWidget {
     this.isExpanded = false,
     this.onToggle,
     this.onDelete,
+    this.expandedBodyKey,
     super.key,
   });
 
@@ -20,6 +21,7 @@ class EffortCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
+  final Key? expandedBodyKey;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +88,7 @@ class EffortCard extends StatelessWidget {
 
   Widget _expanded(EffortSummary s) {
     return Padding(
+      key: expandedBodyKey,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
