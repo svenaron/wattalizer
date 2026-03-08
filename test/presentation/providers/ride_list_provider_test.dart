@@ -48,20 +48,21 @@ void main() {
       expect(repo.getRidesCalls.first.from, isNull);
     });
 
-    test('week span passes a from date 7 days ago', () async {
+    test('week span passes from date at start of current ISO week', () async {
       final repo = FakeRepository();
       final container = createTestContainer(repository: repo);
       addTearDown(container.dispose);
 
-      container.read(spanSelectionProvider.notifier).span = HistorySpan.week;
+      container.read(spanSelectionProvider.notifier).setSpan(HistorySpan.week);
       await container.read(rideListProvider.future);
 
       expect(repo.getRidesCalls, hasLength(1));
       final call = repo.getRidesCalls.first;
       expect(call.from, isNotNull);
-      // from should be approximately 7 days ago
+      // from should be Monday of current ISO week (0–6 days ago)
       final diff = DateTime.now().difference(call.from!);
-      expect(diff.inDays, closeTo(7, 1));
+      expect(diff.inDays, lessThanOrEqualTo(6));
+      expect(diff.inDays, greaterThanOrEqualTo(0));
     });
 
     test('passes tags from tagFilterProvider', () async {
