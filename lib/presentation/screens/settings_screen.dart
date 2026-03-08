@@ -10,6 +10,7 @@ import 'package:wattalizer/domain/models/autolap_config.dart';
 import 'package:wattalizer/domain/services/export_service.dart';
 import 'package:wattalizer/presentation/providers/autolap_config_provider.dart';
 import 'package:wattalizer/presentation/providers/export_service_provider.dart';
+import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_override_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
@@ -250,7 +251,10 @@ class _ImportSectionState extends ConsumerState<_ImportSection> {
           }
         }
       }
-      ref.invalidate(rideListProvider);
+      ref
+        ..invalidate(rideListProvider)
+        ..invalidate(historicalRangeProvider)
+        ..invalidate(maxPowerProvider);
     } on Exception catch (e) {
       if (mounted) {
         _showDetailedResults([
