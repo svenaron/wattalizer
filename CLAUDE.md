@@ -47,6 +47,7 @@ flutter run -d linux                      # run on Linux
 - **Tests**: one test file per source file, mirrored path. Run `flutter test` after every completed item.
 - **Errors**: sealed `AppError` hierarchy. Repository throws → provider catches → UI shows. Never swallow errors.
 - **Null vs zero**: null = sensor dropout, zero = valid reading (e.g., coasting). This distinction matters everywhere.
+- **Line length**: max 80 columns in all Dart files. Lint will reject longer lines.
 
 ## Code Quality
 
