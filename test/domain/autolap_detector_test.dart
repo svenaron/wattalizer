@@ -391,6 +391,66 @@ void main() {
     });
   });
 
+  group('AutoLapDetector — 90s cap', () {
+    test('power stays high for exactly 90s → effort ends at offset 90', () {
+      final detector = AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 5));
+
+      // Cold start: offset 0 starts effort immediately
+      var ev = detector.processReading(_r(0, power: 400));
+      expect(ev, isA<EffortStartedEvent>());
+      expect((ev! as EffortStartedEvent).startOffset, 0);
+
+      // Readings t=1..89: high power, no end
+      for (var t = 1; t < 90; t++) {
+        ev = detector.processReading(_r(t, power: 400));
+        expect(ev, isNull, reason: 'should not end at t=$t');
+      }
+      expect(detector.currentState, AutoLapState.inEffort);
+
+      // t=90: elapsed = 90-0 = 90 → force end
+      ev = detector.processReading(_r(90, power: 400));
+      expect(ev, isA<EffortEndedEvent>());
+      final ended = ev! as EffortEndedEvent;
+      expect(ended.startOffset, 0);
+      expect(ended.endOffset, 90);
+      expect(ended.wasTooShort, false);
+      expect(ended.isManual, false);
+      expect(detector.currentState, AutoLapState.idle);
+    });
+
+    test('power stays high for 91s → effort ends at offset 90, not 91', () {
+      // Use endConfirm=5 to ensure natural end-detection never fires.
+      final detector = AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 5));
+
+      for (var t = 0; t < 90; t++) {
+        detector.processReading(_r(t, power: 400));
+      }
+
+      // Cap fires at t=90; endOffset must be 90, not 91
+      final ev = detector.processReading(_r(90, power: 400));
+      expect(ev, isA<EffortEndedEvent>());
+      expect((ev! as EffortEndedEvent).endOffset, 90);
+    });
+
+    test('natural end before 90s still works normally', () {
+      final detector = AutoLapDetector(_cfg(startConfirm: 1, endConfirm: 1));
+
+      for (var t = 0; t < 5; t++) {
+        detector.processReading(_r(t, power: 100));
+      }
+      detector.processReading(_r(5, power: 400)); // → inEffort
+
+      for (var t = 6; t < 30; t++) {
+        detector.processReading(_r(t, power: 400));
+      }
+      // Power drops well before 90s
+      final ev = detector.processReading(_r(30, power: 90));
+      expect(ev, isA<EffortEndedEvent>());
+      expect((ev! as EffortEndedEvent).endOffset, 30);
+      expect(detector.currentState, AutoLapState.idle);
+    });
+  });
+
   group('AutoLapDetector — reset', () {
     test('reset returns to idle and clears all state', () {
       final detector = AutoLapDetector(_cfg(startConfirm: 1));
