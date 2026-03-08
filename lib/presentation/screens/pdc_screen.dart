@@ -114,28 +114,26 @@ class _StatCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    return Row(
       children: _keyDurations.map((d) {
         final record = best[d - 1];
-        return SizedBox(
-          width: 100,
+        return Expanded(
           child: InkWell(
             onTap: onTap != null ? () => onTap!(record) : null,
             borderRadius: BorderRadius.circular(12),
             child: Card(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 8,
+                  vertical: 6,
+                  horizontal: 4,
                 ),
                 child: Column(
                   children: [
                     Text(
                       '${d}s',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -143,7 +141,7 @@ class _StatCards extends StatelessWidget {
                     Text(
                       '${record.power.round()} W',
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
