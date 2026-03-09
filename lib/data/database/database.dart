@@ -10,6 +10,7 @@ part 'database.g.dart';
 
 @DriftDatabase(
   tables: [
+    Athletes,
     Rides,
     RideTags,
     Efforts,
@@ -32,13 +33,12 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
-          // Custom composite / covering indexes not expressible in table DSL
           await m.database.customStatement(
             'CREATE INDEX idx_readings_ride_offset '
             'ON readings (ride_id, offset_seconds)',
@@ -59,22 +59,35 @@ class AppDatabase extends _$AppDatabase {
             'CREATE INDEX idx_ride_tags_tag '
             'ON ride_tags (tag)',
           );
+          await _seedDefaultAthlete(m.database);
           await _seedBuiltInConfigs(m.database);
         },
         onUpgrade: (m, from, to) async {
-          if (from < 4) {
-            // Drop and recreate all tables (no user data yet in prod).
+          if (from < 5) {
             for (final entity in allSchemaEntities.toList().reversed) {
               await m.drop(entity);
             }
             await m.createAll();
+            await _seedDefaultAthlete(m.database);
             await _seedBuiltInConfigs(m.database);
             return;
           }
         },
       );
 
-  static Future<void> _seedBuiltInConfigs(DatabaseConnectionUser db) async {
+  static Future<void> _seedDefaultAthlete(
+    DatabaseConnectionUser db,
+  ) async {
+    await db.customStatement(
+      'INSERT INTO athletes (id, name, created_at) '
+      "VALUES ('me', 'Me', "
+      '${DateTime.now().millisecondsSinceEpoch})',
+    );
+  }
+
+  static Future<void> _seedBuiltInConfigs(
+    DatabaseConnectionUser db,
+  ) async {
     const cols = 'INSERT INTO autolap_configs '
         '(name, start_delta_watts, '
         'start_confirm_seconds, start_dropout_tolerance, '
@@ -82,13 +95,16 @@ class AppDatabase extends _$AppDatabase {
         'pre_effort_baseline_window, in_effort_trailing_window, '
         'min_peak_watts, is_default) VALUES ';
     await db.customStatement(
-      "$cols('Standing Start', 350.0, 1, 1, 250.0, 4, 2, 10, 5, 700.0, 1)",
+      "$cols('Standing Start', 350.0, 1, 1, "
+      '250.0, 4, 2, 10, 5, 700.0, 1)',
     );
     await db.customStatement(
-      "$cols('Flying Start', 150.0, 2, 1, 150.0, 5, 5, 15, 8, 700.0, 0)",
+      "$cols('Flying Start', 150.0, 2, 1, "
+      '150.0, 5, 5, 15, 8, 700.0, 0)',
     );
     await db.customStatement(
-      "$cols('Broad', 120.0, 1, 1, 100.0, 3, 2, 15, 8, 400.0, 0)",
+      "$cols('Broad', 120.0, 1, 1, "
+      '100.0, 3, 2, 15, 8, 400.0, 0)',
     );
   }
 }

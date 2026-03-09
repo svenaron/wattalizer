@@ -54,7 +54,8 @@ void main() {
 
       expect(container.read(maxPowerOverrideProvider), 600);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getDouble('max_power_override'), 600);
+      // Per-athlete key for the default athlete 'me'
+      expect(prefs.getDouble('max_power_override_me'), 600);
     });
 
     test('set(null) clears state and removes from SharedPreferences', () async {
@@ -65,7 +66,7 @@ void main() {
 
       expect(container.read(maxPowerOverrideProvider), isNull);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getDouble('max_power_override'), isNull);
+      expect(prefs.getDouble('max_power_override_me'), isNull);
     });
   });
 }

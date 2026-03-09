@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wattalizer/core/constants.dart';
+import 'package:wattalizer/presentation/providers/active_athlete_provider.dart';
+import 'package:wattalizer/presentation/providers/athlete_list_provider.dart';
 import 'package:wattalizer/presentation/providers/autolap_config_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_override_provider.dart';
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/theme_mode_provider.dart';
+import 'package:wattalizer/presentation/screens/athlete_list_screen.dart';
 import 'package:wattalizer/presentation/screens/autolap_config_list_screen.dart';
 import 'package:wattalizer/presentation/widgets/device_sheet.dart';
 
@@ -20,8 +23,13 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Settings', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Settings',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 16),
+            const _AthleteSection(),
+            const Divider(),
             const _AutoLapSection(),
             const Divider(),
             const _MaxPowerSection(),
@@ -30,6 +38,42 @@ class SettingsScreen extends ConsumerWidget {
             const Divider(),
             const _AppearanceSection(),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Athlete
+// ---------------------------------------------------------------------------
+
+class _AthleteSection extends ConsumerWidget {
+  const _AthleteSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final athletesAsync = ref.watch(athleteListProvider);
+    final activeId = ref.watch(activeAthleteProvider);
+
+    final subtitle = athletesAsync.when(
+      loading: () => 'Loading...',
+      error: (_, __) => 'Error',
+      data: (athletes) {
+        final active = athletes.where((a) => a.id == activeId).firstOrNull;
+        return active?.name ?? activeId;
+      },
+    );
+
+    return ListTile(
+      leading: const Icon(Icons.person),
+      title: const Text('Athlete'),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => const AthleteListScreen(),
         ),
       ),
     );
