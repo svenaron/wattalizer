@@ -51,12 +51,13 @@ jobs:
       - name: Ad-hoc sign
         run: |
           codesign --deep --force --sign - \
-            build/macos/Build/Products/Release/wattalizer.app
+            --entitlements macos/Runner/Release.entitlements \
+            build/macos/Build/Products/Release/Wattalizer.app
 
       - name: Package DMG
         run: |
           hdiutil create -volname Wattalizer \
-            -srcfolder build/macos/Build/Products/Release/wattalizer.app \
+            -srcfolder build/macos/Build/Products/Release/Wattalizer.app \
             -ov -format UDZO Wattalizer-${{ env.VERSION }}-macos.dmg
 
       - uses: actions/upload-artifact@v4
