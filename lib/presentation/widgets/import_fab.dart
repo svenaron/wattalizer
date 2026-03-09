@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' as io;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -16,24 +17,47 @@ class _ImportFabState extends ConsumerState<ImportFab> {
   bool _importing = false;
 
   Future<void> _import() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['tcx', 'fit', 'zip', 'gz'],
-    );
+    FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['tcx', 'fit', 'zip', 'gz'],
+        withData: true,
+      );
+    } on Exception catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open file picker: $e')),
+        );
+      }
+      return;
+    }
+
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    if (file.path == null) return;
+
+    var importPath = file.path;
+    io.Directory? tempDir;
+
+    if (importPath == null) {
+      if (file.bytes == null) return;
+      tempDir = await io.Directory.systemTemp.createTemp('wattalizer_import_');
+      final tmp = io.File('${tempDir.path}/${file.name}');
+      await tmp.writeAsBytes(file.bytes!);
+      importPath = tmp.path;
+    }
 
     setState(() => _importing = true);
     try {
       final results = await importFileFromPath(
         ref,
-        file.path!,
+        importPath,
         displayName: file.name,
       );
       if (mounted) showImportResultsDialog(context, results);
     } finally {
       if (mounted) setState(() => _importing = false);
+      await tempDir?.delete(recursive: true);
     }
   }
 
