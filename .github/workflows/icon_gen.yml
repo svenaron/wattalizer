@@ -1,0 +1,51 @@
+name: Generate App Icons
+
+on:
+  push:
+    paths:
+      - 'assets/icon/wattalizer_icon.svg'
+  workflow_dispatch:
+
+jobs:
+  generate-icons:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Install librsvg
+        run: sudo apt-get install -y librsvg2-bin
+
+      - name: Convert SVG → 1024×1024 PNG
+        run: |
+          rsvg-convert \
+            -w 1024 -h 1024 \
+            assets/icon/wattalizer_icon.svg \
+            -o assets/icon/wattalizer_icon_1024.png
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate platform icons
+        run: dart run flutter_launcher_icons
+
+      - name: Commit generated icons
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: '[Icons] Regenerate platform icons from SVG'
+          file_pattern: >-
+            assets/icon/wattalizer_icon_1024.png
+            android/app/src/main/res/
+            ios/Runner/Assets.xcassets/AppIcon.appiconset/
+            macos/Runner/Assets.xcassets/AppIcon.appiconset/
+            windows/runner/resources/
+            linux/

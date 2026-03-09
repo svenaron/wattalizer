@@ -31,8 +31,24 @@ flutter:
 dev_dependencies:
   build_runner: ^2.4.0
   drift_dev: ^2.15.0
+  flutter_launcher_icons: ^0.14.1
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
   mockito: ^5.4.0
   very_good_analysis: ^10.2.0
+
+flutter_launcher_icons:
+  image_path: "assets/icon/wattalizer_icon_1024.png"
+  android: "ic_launcher"
+  ios: true
+  remove_alpha_ios: true
+  macos:
+    generate: true
+    image_path: "assets/icon/wattalizer_icon_1024.png"
+  windows:
+    generate: true
+    image_path: "assets/icon/wattalizer_icon_1024.png"
+  linux:
+    generate: true
+    image_path: "assets/icon/wattalizer_icon_1024.png"
