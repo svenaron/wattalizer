@@ -59,3 +59,9 @@ class InvalidConfigError extends AppError {
   final String field;
   final String reason;
 }
+
+// --- Athletes ---
+
+class AthleteDeleteRefused extends AppError {
+  AthleteDeleteRefused();
+}

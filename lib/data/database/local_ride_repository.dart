@@ -723,4 +723,345 @@ class LocalRideRepository implements RideRepository {
       );
     }
   }
+
+  // --- Athlete-scoped variants ---
+
+  Future<int> getRideCountForAthlete(String athleteId) async {
+    final result = await _db.customSelect(
+      'SELECT COUNT(*) AS c FROM rides WHERE athlete_id = ?',
+      variables: [Variable.withString(athleteId)],
+    ).getSingle();
+    return result.read<int>('c');
+  }
+
+  Future<void> saveRideForAthlete(Ride ride, String athleteId) async {
+    try {
+      await _db.transaction(() async {
+        final companion = ride.toCompanion();
+        await _db.into(_db.rides).insert(
+              companion.copyWith(athleteId: Value(athleteId)),
+            );
+        final tagCompanions = _buildTagCompanions(ride.id, ride.tags);
+        if (tagCompanions.isNotEmpty) {
+          await _db.batch((b) {
+            b.insertAll(_db.rideTags, tagCompanions);
+          });
+        }
+      });
+    } catch (e) {
+      throw DatabaseError(operation: 'save_ride', detail: e.toString());
+    }
+  }
+
+  Future<List<RideSummaryRow>> getRidesForAthlete(
+    String athleteId, {
+    DateTime? from,
+    DateTime? to,
+    Set<String>? tags,
+    int? limit,
+    int offset = 0,
+  }) async {
+    try {
+      Set<String>? allowedRideIds;
+      if (tags != null && tags.isNotEmpty) {
+        allowedRideIds = await _getRideIdsWithAllTags(tags);
+        if (allowedRideIds.isEmpty) return [];
+      }
+
+      final query = _db.select(_db.rides)
+        ..where((t) {
+          final conditions = <Expression<bool>>[
+            t.athleteId.equals(athleteId),
+          ];
+          if (from != null) {
+            conditions.add(t.startTime.isBiggerOrEqualValue(from));
+          }
+          if (to != null) {
+            conditions.add(t.startTime.isSmallerOrEqualValue(to));
+          }
+          if (allowedRideIds != null) {
+            conditions.add(t.id.isIn(allowedRideIds.toList()));
+          }
+          return Expression.and(conditions);
+        })
+        ..orderBy([(t) => OrderingTerm.desc(t.startTime)]);
+
+      if (limit != null) {
+        query.limit(limit, offset: offset > 0 ? offset : null);
+      } else if (offset > 0) {
+        query.limit(-1, offset: offset);
+      }
+
+      final rows = await query.get();
+      if (rows.isEmpty) return [];
+
+      final rideIds = rows.map((r) => r.id).toList();
+      final allTagRows = await (_db.select(
+        _db.rideTags,
+      )..where((t) => t.rideId.isIn(rideIds)))
+          .get();
+      final tagsByRide = <String, List<String>>{};
+      for (final tagRow in allTagRows) {
+        tagsByRide.putIfAbsent(tagRow.rideId, () => []).add(tagRow.tag);
+      }
+
+      return rows.map((row) {
+        return RideSummaryRow(
+          id: row.id,
+          startTime: row.startTime,
+          tags: tagsByRide[row.id] ?? [],
+          summary: _summaryFromRow(row),
+        );
+      }).toList();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_rides',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<List<MapCurveWithProvenance>> getAllEffortCurvesForAthlete(
+    String athleteId, {
+    DateTime? from,
+    DateTime? to,
+    Set<String>? tags,
+  }) async {
+    try {
+      Set<String>? allowedRideIds;
+      if (tags != null && tags.isNotEmpty) {
+        allowedRideIds = await _getRideIdsWithAllTags(tags);
+        if (allowedRideIds.isEmpty) return [];
+      }
+
+      final join = _db.select(_db.efforts).join([
+        innerJoin(
+          _db.rides,
+          _db.rides.id.equalsExp(_db.efforts.rideId),
+        ),
+      ]);
+
+      final conditions = <Expression<bool>>[
+        _db.rides.athleteId.equals(athleteId),
+      ];
+      if (from != null) {
+        conditions.add(
+          _db.rides.startTime.isBiggerOrEqualValue(from),
+        );
+      }
+      if (to != null) {
+        conditions.add(
+          _db.rides.startTime.isSmallerOrEqualValue(to),
+        );
+      }
+      if (allowedRideIds != null) {
+        conditions.add(
+          _db.efforts.rideId.isIn(allowedRideIds.toList()),
+        );
+      }
+      join.where(Expression.and(conditions));
+
+      final joinRows = await join.get();
+      if (joinRows.isEmpty) return [];
+
+      final provenanceList = joinRows.map((row) {
+        final effort = row.readTable(_db.efforts);
+        final ride = row.readTable(_db.rides);
+        return (
+          effortId: effort.id,
+          effortNumber: effort.effortNumber,
+          rideId: ride.id,
+          rideDate: ride.startTime,
+        );
+      }).toList();
+
+      final effortIds = provenanceList.map((p) => p.effortId).toList();
+      final curveRows = await (_db.select(
+        _db.mapCurves,
+      )..where((t) => t.effortId.isIn(effortIds)))
+          .get();
+
+      final curvesByEffort = <String, List<MapCurveRow>>{};
+      for (final row in curveRows) {
+        curvesByEffort.putIfAbsent(row.effortId, () => []).add(row);
+      }
+
+      return provenanceList
+          .where((p) => curvesByEffort.containsKey(p.effortId))
+          .map(
+            (p) => MapCurveWithProvenance(
+              effortId: p.effortId,
+              rideId: p.rideId,
+              rideDate: p.rideDate,
+              effortNumber: p.effortNumber,
+              curve: MapCurve.fromRows(
+                p.effortId,
+                curvesByEffort[p.effortId]!,
+              ),
+            ),
+          )
+          .toList();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_all_effort_curves',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<List<String>> getAllTagsForAthlete(String athleteId) async {
+    try {
+      final rows = await _db.customSelect(
+        'SELECT DISTINCT rt.tag FROM ride_tags rt '
+        'INNER JOIN rides r ON r.id = rt.ride_id '
+        'WHERE r.athlete_id = ? '
+        'ORDER BY rt.tag ASC',
+        variables: [Variable.withString(athleteId)],
+      ).get();
+      return rows.map((r) => r.read<String>('tag')).toList();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_all_tags',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<List<DeviceInfo>> getRememberedDevicesForAthlete(
+    String athleteId,
+  ) async {
+    try {
+      final rows = await (_db.select(_db.devices)
+            ..where((t) => t.athleteId.equals(athleteId)))
+          .get();
+      return rows.map(DeviceInfo.fromRow).toList();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_remembered_devices',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<void> saveDeviceForAthlete(
+    DeviceInfo device,
+    String athleteId,
+  ) async {
+    try {
+      final companion = device.toCompanion();
+      await _db.into(_db.devices).insertOnConflictUpdate(
+            companion.copyWith(athleteId: Value(athleteId)),
+          );
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'save_device',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<List<DeviceInfo>> getAutoConnectDevicesForAthlete(
+    String athleteId,
+  ) async {
+    try {
+      final rows = await (_db.select(_db.devices)
+            ..where(
+              (t) => t.athleteId.equals(athleteId) & t.autoConnect.equals(true),
+            ))
+          .get();
+      return rows.map(DeviceInfo.fromRow).toList();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_auto_connect_devices',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<List<AutoLapConfig>> getAutoLapConfigsForAthlete(
+    String athleteId,
+  ) async {
+    try {
+      final rows = await (_db.select(_db.autolapConfigs)
+            ..where(
+              (t) => t.athleteId.isNull() | t.athleteId.equals(athleteId),
+            ))
+          .get();
+      return rows.map(AutoLapConfig.fromRow).toList();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_autolap_configs',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<AutoLapConfig> getDefaultConfigForAthlete(
+    String athleteId,
+  ) async {
+    try {
+      // Prefer athlete-specific default first
+      final athleteDefault = await (_db.select(_db.autolapConfigs)
+            ..where(
+              (t) => t.athleteId.equals(athleteId) & t.isDefault.equals(true),
+            ))
+          .getSingleOrNull();
+      if (athleteDefault != null) {
+        return AutoLapConfig.fromRow(athleteDefault);
+      }
+      // Fall back to global default
+      final globalDefault = await (_db.select(_db.autolapConfigs)
+            ..where(
+              (t) => t.athleteId.isNull() & t.isDefault.equals(true),
+            ))
+          .getSingleOrNull();
+      return globalDefault != null
+          ? AutoLapConfig.fromRow(globalDefault)
+          : AutoLapConfig.standingStart();
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'get_default_config',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  Future<int> saveAutoLapConfigForAthlete(
+    AutoLapConfig config,
+    String athleteId,
+  ) async {
+    try {
+      return await _db.transaction(() async {
+        if (config.isDefault) {
+          // Clear isDefault only for this athlete's configs
+          await (_db.update(_db.autolapConfigs)
+                ..where(
+                  (t) =>
+                      t.athleteId.equals(athleteId) & t.isDefault.equals(true),
+                ))
+              .write(
+            const AutolapConfigsCompanion(isDefault: Value(false)),
+          );
+        }
+        final companion = config.toCompanion();
+        if (config.id == null) {
+          return _db.into(_db.autolapConfigs).insert(
+                companion.copyWith(athleteId: Value(athleteId)),
+              );
+        } else {
+          await (_db.update(_db.autolapConfigs)
+                ..where((t) => t.id.equals(config.id!)))
+              .write(
+            companion.copyWith(athleteId: Value(athleteId)),
+          );
+          return config.id!;
+        }
+      });
+    } catch (e) {
+      throw DatabaseError(
+        operation: 'save_autolap_config',
+        detail: e.toString(),
+      );
+    }
+  }
 }

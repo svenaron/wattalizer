@@ -87,6 +87,7 @@ void main() {
         ImportError() => 'import',
         ExportError() => 'export',
         InvalidConfigError() => 'invalid_config',
+        AthleteDeleteRefused() => 'athlete_delete_refused',
       };
       expect(label, 'ble_connection');
     });

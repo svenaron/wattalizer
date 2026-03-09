@@ -1,8 +1,20 @@
 import 'package:drift/drift.dart';
 
+@DataClassName('AthleteRow')
+class Athletes extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get coachId => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DataClassName('RideRow')
 class Rides extends Table {
   TextColumn get id => text()();
+  TextColumn get athleteId => text().withDefault(const Constant('me'))();
   DateTimeColumn get startTime => dateTime()();
   DateTimeColumn get endTime => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
@@ -100,8 +112,9 @@ class AppSettings extends Table {
 @DataClassName('DeviceRow')
 class Devices extends Table {
   TextColumn get deviceId => text()();
+  TextColumn get athleteId => text().withDefault(const Constant('me'))();
   TextColumn get displayName => text()();
-  TextColumn get supportedServices => text()(); // JSON: '["power","heartRate"]'
+  TextColumn get supportedServices => text()(); // JSON
   DateTimeColumn get lastConnected => dateTime()();
   BoolColumn get autoConnect => boolean().withDefault(const Constant(true))();
 
@@ -112,6 +125,7 @@ class Devices extends Table {
 @DataClassName('AutolapConfigRow')
 class AutolapConfigs extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get athleteId => text().nullable()();
   TextColumn get name => text()();
   RealColumn get startDeltaWatts => real()();
   IntColumn get startConfirmSeconds =>
