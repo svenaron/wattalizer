@@ -1,9 +1,8 @@
 # Wattalizer
 
-[![Build & Test](https://github.com/svenaron/wattalizer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/svenaron/wattalizer/actions/workflows/ci.yml)
-[![Smoke Tests](https://github.com/svenaron/wattalizer/actions/workflows/smoke_tests.yml/badge.svg?branch=main)](https://github.com/svenaron/wattalizer/actions/workflows/smoke_tests.yml)
+A sprint power analyzer for track cyclists. Connect a BLE power meter, ride, and get instant Maximum Average Power curves for every effort — plus personal records and historical trends over time.
 
-A cross-platform app for track cyclists and sprint athletes to analyze power output during sprint interval training. Runs on iOS, Android, macOS, Windows, and Linux.
+Available on macOS, Windows, and Linux.
 
 ## Features
 
@@ -17,20 +16,20 @@ A cross-platform app for track cyclists and sprint athletes to analyze power out
 - **TCX import/export** — interoperability with Strava, Garmin Connect, etc.
 - **Focus mode** — large power display with intensity-coded background for mid-sprint glanceability
 
-## Getting Started
+## Sensors
 
-```bash
-flutter pub get
-dart run build_runner build
-flutter run
-```
+Connects to standard Bluetooth Low Energy sensors using open profiles:
 
-## Architecture
-
-Flutter/Dart with Riverpod state management, Drift/SQLite persistence, and universal_ble for sensor communication. Three-layer architecture: presentation → domain → data.
-
-See `docs/` for the full technical specification.
+| Profile | Examples |
+|---|---|
+| Cycling Power (0x1818) | Favero Assioma, Garmin Vector, SRM, Quarq |
+| Heart Rate (0x180D) | Garmin, Polar, Wahoo Tickr |
+| Cycling Speed & Cadence (0x1816) | Garmin, Wahoo |
 
 ## License
 
 This project is licensed under the terms of the MIT license.
+
+---
+
+For build instructions and architecture docs, see [DEVELOPMENT.md](DEVELOPMENT.md).
