@@ -3,7 +3,7 @@
 [![Build & Test](https://github.com/svenaron/wattalizer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/svenaron/wattalizer/actions/workflows/ci.yml)
 [![Smoke Tests](https://github.com/svenaron/wattalizer/actions/workflows/smoke_tests.yml/badge.svg?branch=main)](https://github.com/svenaron/wattalizer/actions/workflows/smoke_tests.yml)
 
-A cross-platform mobile app for track cyclists and sprint athletes to analyze power output during sprint interval training.
+A cross-platform app for track cyclists and sprint athletes to analyze power output during sprint interval training. Runs on iOS, Android, macOS, Windows, and Linux.
 
 ## Features
 
@@ -12,6 +12,7 @@ A cross-platform mobile app for track cyclists and sprint athletes to analyze po
 - **Personal records** — all-time Power Duration Curve with drill-down to source efforts
 - **Session analysis** — overlay efforts to see fatigue across intervals
 - **Historical envelopes** — best/worst performance bands behind live data
+- **Multi-athlete profiles** — switch between athletes; each has isolated rides, settings, and records
 - **BLE sensor support** — power meters, heart rate straps, cadence sensors
 - **TCX import/export** — interoperability with Strava, Garmin Connect, etc.
 - **Focus mode** — large power display with intensity-coded background for mid-sprint glanceability
@@ -26,7 +27,7 @@ flutter run
 
 ## Architecture
 
-Flutter/Dart with Riverpod state management, Drift/SQLite persistence, and flutter_reactive_ble for sensor communication. Three-layer architecture: presentation → domain → data.
+Flutter/Dart with Riverpod state management, Drift/SQLite persistence, and universal_ble for sensor communication. Three-layer architecture: presentation → domain → data.
 
 See `docs/` for the full technical specification.
 

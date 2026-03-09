@@ -2,6 +2,7 @@
 
 ## Changelog
 
+- **v1.3** (2026-03-09): Multi-athlete profile support. Each athlete has isolated rides, devices, autolap configs, and per-athlete settings. Added athletes table; athleteId FK added to rides, devices, and autolap_config. Active athlete persisted in SharedPreferences; defaults to built-in "Me" profile. DB schemaVersion bumped to 5.
 - **v1.2** (2026-03-04): Multi-platform support (iOS, Android, macOS, Windows, Linux). Responsive layout with compact/medium/expanded breakpoints. Keyboard shortcuts for desktop. Device connection adapts to dialog on wide layouts. Updated tech stack (universal_ble replaces flutter_reactive_ble).
 - **v1.0**: Initial specification — iOS and Android mobile app.
 
@@ -13,7 +14,7 @@
 A cross-platform application (mobile & desktop) for track cyclists and sprint athletes to analyze power output during sprint interval training sessions. The app connects to BLE power meters, automatically detects sprint efforts, computes Maximum Average Power (MAP) curves per effort, and tracks personal records over time.
 
 ### 1.2 Target Users
-Track cyclists, sprint specialists, and coaches performing high-intensity interval sessions on the track or stationary trainer. The primary use case is repeated short-duration maximal efforts (3–30 seconds) with recovery between efforts.
+Track cyclists, sprint specialists, and coaches performing high-intensity interval sessions on the track or stationary trainer. The primary use case is repeated short-duration maximal efforts (3–30 seconds) with recovery between efforts. Coaches or households with multiple athletes can create separate profiles, each with fully isolated ride history, sensors, and settings.
 
 ### 1.3 Key Features
 - Real-time MAP curve (1–90s) per detected effort
@@ -26,6 +27,7 @@ Track cyclists, sprint specialists, and coaches performing high-intensity interv
 - Dual-sided power meter support (L/R balance, individual leg power)
 - Focus mode for mid-sprint glanceability
 - Responsive layout: mobile portrait/landscape, desktop side-by-side with keyboard shortcuts
+- Multi-athlete profiles: isolated ride history, sensors, and settings per athlete; switch with one tap
 
 ### 1.4 Technology Stack
 - Framework: Flutter (Dart) — single codebase for iOS, Android, macOS, Windows, Linux
@@ -56,10 +58,12 @@ Dependency rule: Presentation → Domain → Data interfaces. Data implements do
 - **BleServiceImpl** — wraps universal_ble, manages scanning, connection state machine, characteristic subscriptions
 - **Profile Parsers** — stateless byte-to-typed-data parsers for Cycling Power (0x1818), Heart Rate (0x180D), Cycling Speed & Cadence (0x1816)
 - **LocalRideRepository** — Drift/SQLite implementation of the RideRepository interface
+- **ScopedRideRepository** — wraps LocalRideRepository, injects the active athleteId into all queries
+- **LocalAthleteRepository** — Drift/SQLite CRUD for athlete profiles; guards against deleting the last athlete
 - **TcxSerializer / TcxParser** — XML serialization for import/export
 
 ### 2.3 Domain Layer
-- **Models** — pure Dart classes (SensorReading, Ride, Effort, MapCurve, etc.)
+- **Models** — pure Dart classes (SensorReading, Ride, Effort, MapCurve, AthleteProfile, etc.)
 - **RideSessionManager** — orchestrates active rides, accumulates readings, manages 1Hz merge
 - **AutoLapDetector** — delta-based effort detection state machine
 - **EffortManager** — creates/ends efforts, handles manual laps
@@ -70,7 +74,7 @@ Dependency rule: Presentation → Domain → Data interfaces. Data implements do
 
 ### 2.4 Presentation Layer
 - **Riverpod Providers** — reactive state management connecting domain logic to UI
-- **Screens** — Ride (primary), History, Ride Detail, Power Duration Curve, Device Connection, Settings
+- **Screens** — Ride (primary), History, Ride Detail, Power Duration Curve, Device Connection, Settings, Athlete List
 - **Layout** — responsive: compact (mobile/narrow window), medium (tablet/medium window with nav rail), expanded (wide window with focus+chart side-by-side)
 
 ### 2.5 Provider Graph
@@ -88,6 +92,9 @@ Dependency rule: Presentation → Domain → Data interfaces. Data implements do
 | tagFilterProvider | — | selected tag filters (empty = show all) |
 | autoLapConfigProvider | RideRepository | current AutoLapConfig |
 | maxPowerProvider | RideRepository (settings + historicalRange allTime best[0]) | max power for % of record display |
+| activeAthleteProvider | SharedPreferences ('active_athlete_id') | active AthleteProfile (defaults to 'me') |
+| athleteListProvider | AthleteRepository | list of all AthleteProfile records |
+| rideRepositoryProvider | activeAthleteProvider, LocalRideRepository | ScopedRideRepository scoped to active athlete |
 
 ---
 
@@ -196,6 +203,7 @@ All sensor fields are nullable. Null means sensor dropout, not zero. Zero is val
 | notes | String? | User annotations |
 | source | RideSource | recorded \| imported_tcx |
 | autoLapConfigId | String? | Config used for effort detection |
+| athleteId | String | FK → athletes.id, DEFAULT 'me' |
 | efforts | List\<Effort\> | Detected sprint efforts |
 | summary | RideSummary | Precomputed aggregates |
 
@@ -309,6 +317,16 @@ The best envelope serves as the PDC for the selected span. Computed on demand fr
 | supportedServices | Set\<SensorType\> |
 | lastConnected | DateTime |
 | autoConnect | bool |
+| athleteId | String |
+
+### 4.9 AthleteProfile
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String | UUID, 'me' for the built-in default profile |
+| name | String | Display name |
+| createdAt | DateTime | |
+| coachId | String? | Reserved for future coach-athlete linking |
 
 ---
 
@@ -340,6 +358,7 @@ SQLite via Drift. Type-safe Dart table definitions, auto-generated queries, incr
 | avgLeftRightBalance | REAL | NULLABLE, active efforts only |
 | readingCount | INTEGER | |
 | effortCount | INTEGER | |
+| athleteId | TEXT | FK → athletes.id, DEFAULT 'me', INDEX |
 
 **ride_tags**
 
@@ -421,6 +440,7 @@ Tags are normalized to lowercase and trimmed on write. The tag list for suggesti
 | preEffortBaselineWindow | INTEGER | DEFAULT 15 |
 | inEffortTrailingWindow | INTEGER | DEFAULT 10 |
 | isDefault | BOOLEAN | |
+| athleteId | TEXT | FK → athletes.id, NULLABLE |
 
 **devices**
 
@@ -431,6 +451,16 @@ Tags are normalized to lowercase and trimmed on write. The tag list for suggesti
 | supportedServices | TEXT | JSON list |
 | lastConnected | DATETIME | |
 | autoConnect | BOOLEAN | DEFAULT TRUE |
+| athleteId | TEXT | FK → athletes.id, DEFAULT 'me' |
+
+**athletes**
+
+| Column | Type | Constraints |
+|---|---|---|
+| id | TEXT | PK ('me' for built-in default) |
+| name | TEXT | |
+| createdAt | DATETIME | |
+| coachId | TEXT | NULLABLE |
 
 **app_settings**
 
@@ -440,6 +470,8 @@ Tags are normalized to lowercase and trimmed on write. The tag list for suggesti
 | value | TEXT | |
 
 Used for simple app-level configuration. Known keys in v1: `maxPower` (double as string, nullable — if absent, derived from all-time best 1s power), `theme` ('dark', 'light', 'system').
+
+Note: per-athlete settings (e.g., `max_power_override_$athleteId`) are stored in SharedPreferences, not this table. The active athlete ID is also stored in SharedPreferences under `active_athlete_id`.
 
 ### 5.3 Indexes
 - rides: startTime DESC
@@ -453,6 +485,10 @@ Used for simple app-level configuration. Known keys in v1: `maxPower` (double as
 - Never delete columns — only add nullable columns
 - Schema dump at each version for migration testing
 - Tests verify migration paths from every previous version
+- schemaVersion 5 added the athletes table and athleteId columns. Migration from versions < 5 uses nuke-and-recreate (the app was not yet released when this migration ran, so no user data existed).
+
+### 5.6 Data Isolation by Athlete
+All queries that return rides, devices, or autolap configs are scoped by athleteId via ScopedRideRepository. Deleting an athlete cascades to all their rides, efforts, readings, map_curves, devices, and autolap_configs (performed as a manual transaction — no SQLite FK cascade). The last remaining athlete cannot be deleted.
 
 ### 5.5 Storage Estimates
 - 1-hour ride at 1Hz ≈ 3,600 readings ≈ 700 KB
@@ -731,8 +767,9 @@ Between efforts:
 - Landscape / expanded layout: chart fills available space
 
 #### 9.4.6 Settings
+- **Athletes** — current athlete name with nav to Athlete List screen (create, rename, switch, delete profiles)
 - Auto-lap configuration (→ config screen with presets and manual parameter entry)
-- Max power: displays current value (auto-derived from all-time best 1s, or manual override). Used for Focus Mode background color scaling (% of record). Toggle between "Auto" and manual entry.
+- Max power: displays current value per athlete (auto-derived from all-time best 1s, or manual override). Toggle between "Auto" and manual entry.
 - Import rides (file picker, progress, results)
 - Devices (manage remembered devices)
 - Appearance (dark/light/system)
@@ -741,7 +778,14 @@ Between efforts:
 - Preset selector: Short Sprint / Flying 200 / Team Sprint / Custom
 - Parameter fields with numeric input and tooltips explaining each parameter
 - Selecting a preset fills all fields; modifying any field switches to "Custom"
-- Save button applies config as new default
+- Save button applies config as new default for the active athlete
+
+#### 9.4.8 Athlete List Screen
+- Scrollable list of athlete profiles; active athlete highlighted
+- Tap an athlete to switch (updates activeAthleteProvider; all data providers re-scope)
+- Create new athlete: name entry dialog
+- Rename: inline or via long-press / context menu
+- Delete (swipe or button): confirmation dialog; last athlete is protected from deletion; cascade-deletes all associated data
 
 ### 9.5 Keyboard Shortcuts
 
@@ -830,6 +874,9 @@ Keyboard shortcuts are available on all platforms but primarily useful on deskto
 - Effort + MapCurve cascade on delete
 - Historical query with date and tag filter
 - Migration paths from every previous version
+- Athlete CRUD: create, rename, delete; last-athlete guard
+- Athlete cascade delete: removes rides, efforts, readings, map_curves, devices, autolap_configs
+- ScopedRideRepository: rides from athlete A are not visible when scoped to athlete B
 
 **TCX Serializer/Parser:**
 - Round-trip fidelity (export → import → compare)
@@ -855,6 +902,8 @@ Keyboard shortcuts are available on all platforms but primarily useful on deskto
 - Ride list filtering by span and tags
 - Span change → recompute historical range and re-filter ride list
 - PDC screen uses historicalRangeProvider best envelope (with provenance for drill-down)
+- Switching active athlete re-scopes rideRepositoryProvider and invalidates ride list / historical range
+- maxPowerOverrideProvider persists and loads per-athlete key; migrates legacy shared key on first load
 
 ### 10.4 Manual Testing
 
