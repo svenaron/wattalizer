@@ -76,7 +76,7 @@ void main() {
       expect(ev, isA<EffortEndedEvent>());
       final ended = ev! as EffortEndedEvent;
       expect(ended.startOffset, 5);
-      expect(ended.endOffset, 12); // trimmed to tentative end
+      expect(ended.endOffset, 14); // confirmed at t=14 (drop at t=12 + 2 more)
       expect(ended.wasTooShort, false);
       expect(ended.isManual, false);
       expect(detector.currentState, AutoLapState.idle);
@@ -315,7 +315,7 @@ void main() {
 
         final ev = detector.endRide(15);
         expect(ev, isA<EffortEndedEvent>());
-        expect((ev! as EffortEndedEvent).endOffset, 10); // trimmed to tentative
+        expect((ev! as EffortEndedEvent).endOffset, 15); // ride ended at t=15
       },
     );
   });
@@ -385,7 +385,7 @@ void main() {
       expect(events.length, 1);
       expect(events[0], isA<EffortEndedEvent>());
       final ended = events[0] as EffortEndedEvent;
-      expect(ended.endOffset, 10); // trimmed to tentative
+      expect(ended.endOffset, 15); // manualLap at t=15
       expect(ended.isManual, true);
       expect(detector.currentState, AutoLapState.idle);
     });
