@@ -15,6 +15,8 @@ class ImportFab extends ConsumerStatefulWidget {
 
 class _ImportFabState extends ConsumerState<ImportFab> {
   bool _importing = false;
+  int _importDone = 0;
+  int _importTotal = 0;
 
   Future<void> _import() async {
     FilePickerResult? result;
@@ -53,16 +55,41 @@ class _ImportFabState extends ConsumerState<ImportFab> {
         ref,
         importPath,
         displayName: file.name,
+        onProgress: (done, total) {
+          if (mounted) {
+            setState(() {
+              _importDone = done;
+              _importTotal = total;
+            });
+          }
+        },
       );
       if (mounted) showImportResultsDialog(context, results);
     } finally {
-      if (mounted) setState(() => _importing = false);
+      if (mounted) {
+        setState(() {
+          _importing = false;
+          _importDone = 0;
+          _importTotal = 0;
+        });
+      }
       await tempDir?.delete(recursive: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_importing && _importTotal > 1) {
+      return FloatingActionButton.extended(
+        onPressed: null,
+        icon: const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        label: Text('$_importDone / $_importTotal'),
+      );
+    }
     return FloatingActionButton(
       tooltip: 'Import rides',
       onPressed: _importing ? null : _import,
