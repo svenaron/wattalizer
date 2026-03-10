@@ -6,6 +6,8 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # top of every hour — catches commits skipped by debounce
 
 concurrency:
   group: canary-build
@@ -15,33 +17,45 @@ jobs:
   should-build:
     runs-on: ubuntu-latest
     # For workflow_run: only proceed if smoke tests passed.
-    # workflow_dispatch always enters (no smoke-test context to check).
+    # workflow_dispatch and schedule always enter (no smoke-test context).
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       github.event.workflow_run.conclusion == 'success'
     outputs:
       proceed: ${{ steps.debounce.outputs.proceed }}
     steps:
-      - name: Debounce – skip if last success < 1 h ago
+      - name: Debounce – skip if last success < 1 h ago or HEAD already built
         id: debounce
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # --- time gate: at most one build per hour ---
           LAST=$(gh api \
             "repos/${{ github.repository }}/actions/workflows/canary.yml/runs?status=success&per_page=1" \
             --jq '.workflow_runs[0].updated_at // empty')
-          if [ -z "$LAST" ]; then
-            echo "proceed=true" >> $GITHUB_OUTPUT
+          if [ -n "$LAST" ]; then
+            LAST_S=$(date -u -d "$LAST" +%s)
+            NOW_S=$(date -u +%s)
+            if (( NOW_S - LAST_S < 3600 )); then
+              echo "proceed=false" >> $GITHUB_OUTPUT
+              echo "Last build was $(( (NOW_S - LAST_S) / 60 ))m ago — skipping"
+              exit 0
+            fi
+          fi
+
+          # --- SHA gate: skip if HEAD is already the published canary ---
+          LAST_SHA=$(gh release view canary \
+            --repo ${{ github.repository }} \
+            --json body --jq '.body' 2>/dev/null \
+            | grep -oE '[0-9a-f]{40}' | head -1 || true)
+          if [ "$LAST_SHA" = "${{ github.sha }}" ]; then
+            echo "proceed=false" >> $GITHUB_OUTPUT
+            echo "HEAD ${{ github.sha }} already published — skipping"
             exit 0
           fi
-          LAST_S=$(date -u -d "$LAST" +%s)
-          NOW_S=$(date -u +%s)
-          if (( NOW_S - LAST_S >= 3600 )); then
-            echo "proceed=true" >> $GITHUB_OUTPUT
-          else
-            echo "proceed=false" >> $GITHUB_OUTPUT
-            echo "Last build was $(( (NOW_S - LAST_S) / 60 ))m ago — skipping"
-          fi
+
+          echo "proceed=true" >> $GITHUB_OUTPUT
 
   build-macos:
     needs: should-build
