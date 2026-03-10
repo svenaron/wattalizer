@@ -21,7 +21,7 @@ class _ImportFabState extends ConsumerState<ImportFab> {
     try {
       result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['tcx', 'fit', 'zip', 'gz'],
+        allowedExtensions: ['tcx', 'fit', 'zip', 'gz', 'json'],
         withData: true,
       );
     } on Exception catch (e) {

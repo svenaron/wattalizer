@@ -3,7 +3,7 @@ import 'package:wattalizer/data/database/database.dart';
 import 'package:wattalizer/domain/models/effort.dart';
 import 'package:wattalizer/domain/models/ride_summary.dart';
 
-enum RideSource { recorded, importedTcx, importedFit }
+enum RideSource { recorded, importedTcx, importedFit, importedGcJson }
 
 class Ride {
   const Ride({
@@ -27,6 +27,7 @@ class Ride {
       source: switch (row.source) {
         'recorded' => RideSource.recorded,
         'imported_fit' => RideSource.importedFit,
+        'imported_gc_json' => RideSource.importedGcJson,
         _ => RideSource.importedTcx,
       },
       efforts: efforts,
@@ -55,6 +56,7 @@ class Ride {
         RideSource.recorded => 'recorded',
         RideSource.importedTcx => 'imported_tcx',
         RideSource.importedFit => 'imported_fit',
+        RideSource.importedGcJson => 'imported_gc_json',
       },
       durationSeconds: summary.durationSeconds,
       activeDurationSeconds: summary.activeDurationSeconds,
