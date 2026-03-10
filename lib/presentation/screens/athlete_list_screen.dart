@@ -168,7 +168,7 @@ class AthleteListScreen extends ConsumerWidget {
         ],
       ),
     );
-    ctrl.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (name != null && name.isNotEmpty) {
       await ref
           .read(athleteRepositoryProvider)
@@ -203,7 +203,10 @@ class AthleteListScreen extends ConsumerWidget {
         ],
       ),
     );
-    ctrl.dispose();
+    // Defer disposal: the dialog dismiss animation still renders the
+    // TextField after showDialog returns, so disposing ctrl immediately
+    // causes a "used after dispose" error.
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (name != null && name.isNotEmpty) {
       final id = 'athlete_${DateTime.now().millisecondsSinceEpoch}';
       final athlete = AthleteProfile(
