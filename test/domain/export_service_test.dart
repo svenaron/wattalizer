@@ -512,6 +512,24 @@ void main() {
 
       expect(progress, [(0, 2), (1, 2), (2, 2)]);
     });
+
+    test('macOS resource-fork and __MACOSX metadata files are silently ignored',
+        () async {
+      final svc = makeService();
+      // macOS ZIP tools add a binary AppleDouble sidecar for every file and
+      // bundle all sidecars under a __MACOSX/ directory.  Both must be
+      // excluded so they never reach the parsers.
+      final zipFile = _makeZipWithBytes(tempDir, {
+        'ride.tcx': _validTcx().codeUnits,
+        '._ride.tcx': [0x00, 0x05, 0x16, 0x07], // AppleDouble magic bytes
+        '__MACOSX/._ride.tcx': [0x00, 0x05, 0x16, 0x07],
+      });
+
+      final results = await svc.importZip(zipFile, config);
+
+      expect(results, hasLength(1));
+      expect(results.first.ride, isNotNull);
+    });
   });
 }
 
