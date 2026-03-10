@@ -35,6 +35,13 @@ Connects to standard Bluetooth Low Energy sensors using open profiles:
 | Heart Rate (0x180D) | Garmin, Polar, Wahoo Tickr |
 | Cycling Speed & Cadence (0x1816) | Garmin, Wahoo |
 
+## Download
+
+| Channel | When to use | Where |
+|---|---|---|
+| **Stable** (tagged release) | Recommended for most users | GitHub Releases → latest versioned tag |
+| **Canary** (built from `main`) | Testing unreleased changes; may be unstable | GitHub Releases → `canary` pre-release |
+
 ## License
 
 This project is licensed under the terms of the MIT license.
