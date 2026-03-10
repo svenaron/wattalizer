@@ -182,32 +182,6 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
     return null;
   }
 
-  Future<void> _makeDefault() async {
-    final repo = ref.read(rideRepositoryProvider);
-    if (_selectedConfig != null) {
-      await repo.saveAutoLapConfig(_selectedConfig!.copyWith(isDefault: true));
-    } else {
-      await repo.saveAutoLapConfig(
-        AutoLapConfig(
-          name: _config.name.isNotEmpty ? _config.name : 'Custom',
-          startDeltaWatts: _config.startDeltaWatts,
-          startConfirmSeconds: _config.startConfirmSeconds,
-          startDropoutTolerance: _config.startDropoutTolerance,
-          endDeltaWatts: _config.endDeltaWatts,
-          endConfirmSeconds: _config.endConfirmSeconds,
-          minEffortSeconds: _config.minEffortSeconds,
-          preEffortBaselineWindow: _config.preEffortBaselineWindow,
-          inEffortTrailingWindow: _config.inEffortTrailingWindow,
-          minPeakWatts: _config.minPeakWatts,
-          isDefault: true,
-        ),
-      );
-    }
-    ref
-      ..invalidate(autoLapConfigProvider)
-      ..invalidate(autoLapConfigListProvider);
-  }
-
   Future<void> _apply() async {
     setState(() => _applying = true);
     final repo = ref.read(rideRepositoryProvider);
@@ -371,16 +345,6 @@ class _RedetectPreviewSheetState extends ConsumerState<RedetectPreviewSheet> {
               TextButton(
                 onPressed: _applying ? null : () => Navigator.pop(context),
                 child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: _applying
-                    ? null
-                    : () async {
-                        await _makeDefault();
-                        await _apply();
-                      },
-                child: const Text('Make Default'),
               ),
               const SizedBox(width: 8),
               FilledButton(

@@ -35,6 +35,7 @@ class FakeRepository implements RideRepository {
     startDeltaWatts: 200,
     endDeltaWatts: 100,
   );
+  List<AutoLapConfig> autoLapConfigsToReturn = [];
 
   // Call tracking
   List<GetRidesCall> getRidesCalls = [];
@@ -43,6 +44,7 @@ class FakeRepository implements RideRepository {
   Map<String, List<SensorReading>> insertedReadingsByRide = {};
   Map<String, List<Effort>> savedEffortsByRide = {};
   Map<String, MapCurve> savedCurves = {};
+  List<AutoLapConfig> savedAutoLapConfigs = [];
   int transactionCount = 0;
 
   @override
@@ -140,7 +142,8 @@ class FakeRepository implements RideRepository {
   Future<MapCurve?> getRidePdc(String rideId) async => ridePdcs[rideId];
 
   @override
-  Future<List<AutoLapConfig>> getAutoLapConfigs() async => [];
+  Future<List<AutoLapConfig>> getAutoLapConfigs() async =>
+      autoLapConfigsToReturn;
 
   @override
   Future<AutoLapConfig> getDefaultConfig() async => defaultConfigToReturn;
@@ -148,7 +151,10 @@ class FakeRepository implements RideRepository {
   int _nextConfigId = 100;
 
   @override
-  Future<int> saveAutoLapConfig(AutoLapConfig config) async => _nextConfigId++;
+  Future<int> saveAutoLapConfig(AutoLapConfig config) async {
+    savedAutoLapConfigs.add(config);
+    return _nextConfigId++;
+  }
 
   @override
   Future<bool> deleteAutoLapConfig(int id) async => true;
