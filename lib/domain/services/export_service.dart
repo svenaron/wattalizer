@@ -218,6 +218,15 @@ class ExportService {
     );
   }
 
+  /// Returns true for macOS resource-fork and metadata files that ZIP tools
+  /// include automatically. These are binary AppleDouble files, not valid
+  /// activity data, so they must be excluded before import parsing.
+  bool _isMacOsMetadataFile(String archivePath) {
+    final lower = archivePath.toLowerCase();
+    final basename = lower.split('/').last;
+    return basename.startsWith('._') || lower.startsWith('__macosx/');
+  }
+
   /// Import a ZIP archive of TCX and/or FIT files.
   /// Returns results for each importable file (success or failure per file).
   /// Never throws — errors are collected per file.
@@ -250,6 +259,7 @@ class ExportService {
     final importableFiles = archive.files.where((f) {
       final n = f.name.toLowerCase();
       return f.isFile &&
+          !_isMacOsMetadataFile(f.name) &&
           (n.endsWith('.tcx') ||
               n.endsWith('.tcx.gz') ||
               n.endsWith('.fit') ||
