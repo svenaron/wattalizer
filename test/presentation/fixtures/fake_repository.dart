@@ -40,6 +40,7 @@ class FakeRepository implements RideRepository {
   List<GetRidesCall> getRidesCalls = [];
   List<GetAllEffortCurvesCall> getAllEffortCurvesCalls = [];
   List<Ride> savedRides = [];
+  List<String> deleteRideCalls = [];
   Map<String, List<SensorReading>> insertedReadingsByRide = {};
   Map<String, List<Effort>> savedEffortsByRide = {};
   Map<String, MapCurve> savedCurves = {};
@@ -76,7 +77,7 @@ class FakeRepository implements RideRepository {
   }
 
   @override
-  Future<void> deleteRide(String id) async {}
+  Future<void> deleteRide(String id) async => deleteRideCalls.add(id);
 
   @override
   Future<List<SensorReading>> getReadings(
