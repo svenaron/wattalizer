@@ -12,7 +12,8 @@ import 'package:wattalizer/presentation/providers/historical_range_provider.dart
 import 'package:wattalizer/presentation/providers/max_power_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
 
-/// Routes [filePath] to importFit, importTcx, or importZip based on
+/// Routes [filePath] to importFit, importGcJson, importTcx, or importZip based
+/// on
 /// extension. Invalidates list/range/power providers on success.
 /// Never throws — errors are captured as [ImportResult] entries.
 Future<List<ImportResult>> importFileFromPath(
@@ -36,7 +37,9 @@ Future<List<ImportResult>> importFileFromPath(
       try {
         final ride = name.endsWith('.fit') || name.endsWith('.fit.gz')
             ? await export.importFit(file, config)
-            : await export.importTcx(file, config);
+            : name.endsWith('.json')
+                ? await export.importGcJson(file, config)
+                : await export.importTcx(file, config);
         results = [ImportResult(fileName: fileName, ride: ride)];
       } on ImportError catch (e) {
         results = [ImportResult(fileName: fileName, error: e)];

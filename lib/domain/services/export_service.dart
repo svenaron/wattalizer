@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wattalizer/core/error_types.dart';
 import 'package:wattalizer/data/fit/fit_parser.dart';
+import 'package:wattalizer/data/json/gc_json_parser.dart';
 import 'package:wattalizer/data/tcx/tcx_parser.dart';
 import 'package:wattalizer/data/tcx/tcx_serializer.dart';
 import 'package:wattalizer/domain/interfaces/ride_repository.dart';
@@ -166,6 +167,57 @@ class ExportService {
     );
   }
 
+  /// Import a single GoldenCheetah JSON file. Returns a fully populated
+  /// Ride with re-detected efforts.
+  /// Throws [ImportError] on validation failure.
+  Future<Ride> importGcJson(File file, AutoLapConfig config) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+
+    if (file.lengthSync() > _maxFileSizeBytes) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.fileTooLarge,
+        detail: 'File exceeds 50 MB limit',
+      );
+    }
+
+    final String content;
+    try {
+      content = file.readAsStringSync();
+    } catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: 'Read error: $e',
+      );
+    }
+
+    GcJsonParseResult result;
+    try {
+      result = GcJsonParser.parse(content);
+    } on FormatException catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: e.message,
+      );
+    } catch (e) {
+      throw ImportError(
+        fileName: fileName,
+        type: ImportErrorType.malformedFile,
+        detail: '${e.runtimeType}: $e',
+      );
+    }
+
+    return _importParsedReadings(
+      fileName: fileName,
+      startTime: result.startTime,
+      readings: result.readings,
+      source: RideSource.importedGcJson,
+      config: config,
+    );
+  }
+
   /// Import a ZIP archive of TCX and/or FIT files.
   /// Returns results for each importable file (success or failure per file).
   /// Never throws — errors are collected per file.
@@ -201,7 +253,8 @@ class ExportService {
           (n.endsWith('.tcx') ||
               n.endsWith('.tcx.gz') ||
               n.endsWith('.fit') ||
-              n.endsWith('.fit.gz'));
+              n.endsWith('.fit.gz') ||
+              n.endsWith('.json'));
     }).toList();
     final total = importableFiles.length;
 
@@ -231,6 +284,8 @@ class ExportService {
           final Ride ride;
           if (lowerName.endsWith('.fit') || lowerName.endsWith('.fit.gz')) {
             ride = await importFit(tempFile, config);
+          } else if (lowerName.endsWith('.json')) {
+            ride = await importGcJson(tempFile, config);
           } else {
             ride = await importTcx(tempFile, config);
           }
