@@ -20,6 +20,7 @@ Future<List<ImportResult>> importFileFromPath(
   WidgetRef ref,
   String filePath, {
   String? displayName,
+  void Function(int done, int total)? onProgress,
 }) async {
   final fileName = displayName ?? filePath.split(Platform.pathSeparator).last;
   final name = fileName.toLowerCase();
@@ -32,7 +33,7 @@ Future<List<ImportResult>> importFileFromPath(
 
     List<ImportResult> results;
     if (name.endsWith('.zip')) {
-      results = await export.importZip(file, config);
+      results = await export.importZip(file, config, onProgress: onProgress);
     } else {
       try {
         final ride = name.endsWith('.fit') || name.endsWith('.fit.gz')
