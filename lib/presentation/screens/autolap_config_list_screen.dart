@@ -97,32 +97,31 @@ class AutoLapConfigListScreen extends ConsumerWidget {
               final cfg = configs[i];
               final peak = cfg.minPeakWatts;
               return ListTile(
-                leading: cfg.isDefault
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : const Icon(Icons.radio_button_unchecked),
+                leading: IconButton(
+                  tooltip: cfg.isDefault ? 'Default' : 'Set as default',
+                  icon: cfg.isDefault
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : const Icon(Icons.radio_button_unchecked),
+                  onPressed: cfg.isDefault ? null : () => _setDefault(ref, cfg),
+                ),
                 title: Text(cfg.name),
                 subtitle: Text(
                   '↑${cfg.startDeltaWatts.toStringAsFixed(0)}W '
                   '↓${cfg.endDeltaWatts.toStringAsFixed(0)}W '
                   '${peak != null ? 'peak≥${peak.toStringAsFixed(0)}W' : ''}',
                 ),
-                onTap: cfg.isDefault ? null : () => _setDefault(ref, cfg),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => AutoLapConfigEditScreen(config: cfg),
+                    ),
+                  );
+                  _invalidateBoth(ref);
+                },
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (_) =>
-                                AutoLapConfigEditScreen(config: cfg),
-                          ),
-                        );
-                        _invalidateBoth(ref);
-                      },
-                    ),
                     IconButton(
                       icon: Icon(
                         Icons.delete,
