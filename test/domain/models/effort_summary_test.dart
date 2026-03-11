@@ -23,6 +23,7 @@ void main() {
       expect(s.avgHeartRate, isNull);
       expect(s.maxHeartRate, isNull);
       expect(s.avgCadence, isNull);
+      expect(s.peakCadence, isNull);
       expect(s.avgLeftRightBalance, isNull);
       expect(s.restSincePrevious, isNull);
     });

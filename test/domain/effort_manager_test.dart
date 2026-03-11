@@ -277,7 +277,7 @@ void main() {
       // Baseline = 100W. Sprint = 500W (1 reading). Recovery = 50W.
       // With endDelta=100: trailing starts at [500], after adding 50 → avg=275.
       // 50 < 275 - 100 = 175 → TRUE → end triggers immediately (endConfirm=1).
-      // duration = endOffset(6) - startOffset(5) = 1 < minEffort=5
+      // duration = endOffset(5) - startOffset(5) = 0 < minEffort=5
       // → wasTooShort=true.
       final readings = [
         ...List.generate(5, (i) => _r(i, power: 100)),

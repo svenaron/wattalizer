@@ -57,6 +57,7 @@ class Efforts extends Table {
   IntColumn get avgHeartRate => integer().nullable()();
   IntColumn get maxHeartRate => integer().nullable()();
   RealColumn get avgCadence => real().nullable()();
+  RealColumn get peakCadence => real().nullable()();
   RealColumn get avgLeftRightBalance => real().nullable()();
   IntColumn get restSincePrevious => integer().nullable()();
 

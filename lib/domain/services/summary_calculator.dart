@@ -23,6 +23,7 @@ class SummaryCalculator {
     var maxHr = 0;
     double cadSum = 0;
     var cadCount = 0;
+    double peakCadence = 0;
     double lrSum = 0;
     var lrCount = 0;
 
@@ -40,6 +41,7 @@ class SummaryCalculator {
       if (r.cadence != null) {
         cadSum += r.cadence!;
         cadCount++;
+        if (r.cadence! > peakCadence) peakCadence = r.cadence!;
       }
       if (r.leftRightBalance != null) {
         lrSum += r.leftRightBalance!;
@@ -59,6 +61,7 @@ class SummaryCalculator {
       avgHeartRate: hrCount > 0 ? (hrSum / hrCount).round() : null,
       maxHeartRate: hrCount > 0 ? maxHr : null,
       avgCadence: cadCount > 0 ? cadSum / cadCount : null,
+      peakCadence: cadCount > 0 ? peakCadence : null,
       avgLeftRightBalance: lrCount > 0 ? lrSum / lrCount : null,
     );
   }

@@ -63,21 +63,24 @@ void main() {
       expect(summary.maxHeartRate, isNull);
     });
 
-    test('no cadence readings → avgCadence is null', () {
+    test('no cadence readings → avgCadence and peakCadence are null', () {
       final readings = [_r(0, power: 500, hr: 160)];
       final summary = SummaryCalculator.computeEffortSummary(readings);
 
       expect(summary.avgCadence, isNull);
+      expect(summary.peakCadence, isNull);
     });
 
-    test('cadence averaged across readings', () {
+    test('cadence averaged and peak tracked across readings', () {
       final readings = [
         _r(0, power: 500, cadence: 100),
         _r(1, power: 500, cadence: 120),
+        _r(2, power: 500, cadence: 110),
       ];
       final summary = SummaryCalculator.computeEffortSummary(readings);
 
       expect(summary.avgCadence, closeTo(110.0, 0.001));
+      expect(summary.peakCadence, closeTo(120.0, 0.001));
     });
   });
 
