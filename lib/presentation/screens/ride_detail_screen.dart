@@ -9,6 +9,8 @@ import 'package:wattalizer/domain/models/ride_summary.dart';
 import 'package:wattalizer/domain/services/effort_manager.dart';
 import 'package:wattalizer/domain/services/export_service.dart';
 import 'package:wattalizer/presentation/providers/all_tags_provider.dart';
+import 'package:wattalizer/presentation/providers/chart_visibility_provider.dart';
+import 'package:wattalizer/presentation/providers/effort_readings_provider.dart';
 import 'package:wattalizer/presentation/providers/historical_range_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_detail_provider.dart';
 import 'package:wattalizer/presentation/providers/ride_list_provider.dart';
@@ -54,7 +56,6 @@ class RideDetailScreen extends ConsumerWidget {
         return _DetailView(
           ride: ride,
           historicalRange: range,
-          ref: ref,
           scrollToEffortId: scrollToEffortId,
         );
       },
@@ -66,24 +67,22 @@ class RideDetailScreen extends ConsumerWidget {
 // Detail view
 // ---------------------------------------------------------------------------
 
-class _DetailView extends StatefulWidget {
+class _DetailView extends ConsumerStatefulWidget {
   const _DetailView({
     required this.ride,
     required this.historicalRange,
-    required this.ref,
     this.scrollToEffortId,
   });
 
   final Ride ride;
   final HistoricalRange? historicalRange;
-  final WidgetRef ref;
   final String? scrollToEffortId;
 
   @override
-  State<_DetailView> createState() => _DetailViewState();
+  ConsumerState<_DetailView> createState() => _DetailViewState();
 }
 
-class _DetailViewState extends State<_DetailView> {
+class _DetailViewState extends ConsumerState<_DetailView> {
   int? _expandedEffort;
   final Map<String, GlobalKey> _effortKeys = {};
   final Map<String, GlobalKey> _effortExpandedKeys = {};
@@ -165,7 +164,7 @@ class _DetailViewState extends State<_DetailView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Tags
-            _TagSection(ride: ride, ref: widget.ref),
+            _TagSection(ride: ride, ref: ref),
             const SizedBox(height: 16),
 
             // Summary stats
@@ -206,17 +205,42 @@ class _DetailViewState extends State<_DetailView> {
                 return Padding(
                   key: _effortKeys[e.id],
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: EffortCard(
-                    effort: e,
-                    historicalRange: widget.historicalRange,
-                    isExpanded: _expandedEffort == e.effortNumber,
-                    onToggle: () => setState(() {
-                      _expandedEffort = _expandedEffort == e.effortNumber
-                          ? null
-                          : e.effortNumber;
-                    }),
-                    onDelete: () => _deleteEffort(ride, e.effortNumber),
-                    expandedBodyKey: _effortExpandedKeys[e.id],
+                  child: Consumer(
+                    builder: (ctx, ref, _) {
+                      final readingsAsync = ref.watch(
+                        effortReadingsProvider(
+                          (
+                            rideId: e.rideId,
+                            startOffset: e.startOffset,
+                            endOffset: e.startOffset + 90,
+                          ),
+                        ),
+                      );
+                      return EffortCard(
+                        effort: e,
+                        rawReadings: _expandedEffort == e.effortNumber
+                            ? readingsAsync.asData?.value
+                            : null,
+                        historicalRange: widget.historicalRange,
+                        isExpanded: _expandedEffort == e.effortNumber,
+                        showPower: ref.watch(chartVisibilityProvider).showPower,
+                        showCadence:
+                            ref.watch(chartVisibilityProvider).showCadence,
+                        onToggle: () => setState(() {
+                          _expandedEffort = _expandedEffort == e.effortNumber
+                              ? null
+                              : e.effortNumber;
+                        }),
+                        onTogglePower: () => ref
+                            .read(chartVisibilityProvider.notifier)
+                            .togglePower(),
+                        onToggleCadence: () => ref
+                            .read(chartVisibilityProvider.notifier)
+                            .toggleCadence(),
+                        onDelete: () => _deleteEffort(ride, e.effortNumber),
+                        expandedBodyKey: _effortExpandedKeys[e.id],
+                      );
+                    },
                   ),
                 );
               }),
@@ -239,7 +263,7 @@ class _DetailViewState extends State<_DetailView> {
   }
 
   Future<void> _openRedetect(Ride ride) async {
-    final repo = widget.ref.read(rideRepositoryProvider);
+    final repo = ref.read(rideRepositoryProvider);
     final readings = await repo.getReadings(ride.id);
     if (!mounted) return;
     showRedetectSheet(context, ride, readings);
@@ -247,7 +271,7 @@ class _DetailViewState extends State<_DetailView> {
 
   Future<void> _exportRide(Ride ride) async {
     try {
-      final repo = widget.ref.read(rideRepositoryProvider);
+      final repo = ref.read(rideRepositoryProvider);
       final readings = await repo.getReadings(ride.id);
       final service = ExportService(repository: repo);
       final path = await service.exportTcx(ride, readings);
@@ -280,9 +304,9 @@ class _DetailViewState extends State<_DetailView> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    final repo = widget.ref.read(rideRepositoryProvider);
+    final repo = ref.read(rideRepositoryProvider);
     await repo.deleteRide(ride.id);
-    widget.ref.invalidate(rideListProvider);
+    ref.invalidate(rideListProvider);
     if (!mounted) return;
     Navigator.pop(context);
   }
@@ -308,7 +332,7 @@ class _DetailViewState extends State<_DetailView> {
     if (confirmed != true || !mounted) return;
 
     final updated = EffortManager.removeEffort(ride.efforts, effortNumber);
-    final repo = widget.ref.read(rideRepositoryProvider);
+    final repo = ref.read(rideRepositoryProvider);
     await repo.saveEfforts(ride.id, updated);
     final s = ride.summary;
     await repo.updateRide(
@@ -329,7 +353,7 @@ class _DetailViewState extends State<_DetailView> {
       ),
     );
 
-    widget.ref
+    ref
       ..invalidate(rideDetailProvider(ride.id))
       ..invalidate(rideListProvider)
       ..invalidate(historicalRangeProvider);
