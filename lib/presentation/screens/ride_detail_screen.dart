@@ -440,7 +440,12 @@ class _RidePdcSection extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
-        MapCurveChart(curve: pdc, historicalRange: range),
+        MapCurveChart(
+          curve: pdc,
+          historicalRange: range,
+          provenanceRecords: range?.best,
+          lowerProvenanceRecords: range?.worst,
+        ),
         const SizedBox(height: 16),
       ],
     );
