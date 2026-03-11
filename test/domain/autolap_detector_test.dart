@@ -315,7 +315,8 @@ void main() {
 
         final ev = detector.endRide(15);
         expect(ev, isA<EffortEndedEvent>());
-        expect((ev! as EffortEndedEvent).endOffset, 9); // last high-power reading (drop at t=10)
+        // last high-power reading (drop at t=10)
+        expect((ev! as EffortEndedEvent).endOffset, 9);
       },
     );
   });
