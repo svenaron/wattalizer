@@ -246,6 +246,11 @@ class _EffortCardState extends State<EffortCard> {
                     label: 'Avg Cadence',
                     value: '${s.avgCadence!.round()} rpm',
                   ),
+                if (s.peakCadence != null)
+                  _StatBox(
+                    label: 'Peak Cadence',
+                    value: '${s.peakCadence!.round()} rpm',
+                  ),
                 if (s.restSincePrevious != null)
                   _StatBox(
                     label: 'Rest',

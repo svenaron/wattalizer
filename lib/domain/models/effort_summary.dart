@@ -6,6 +6,7 @@ class EffortSummary {
     this.avgHeartRate,
     this.maxHeartRate,
     this.avgCadence,
+    this.peakCadence,
     this.avgLeftRightBalance,
     this.restSincePrevious,
   });
@@ -16,6 +17,7 @@ class EffortSummary {
   final int? avgHeartRate;
   final int? maxHeartRate;
   final double? avgCadence;
+  final double? peakCadence; // highest single 1Hz cadence reading
   final double? avgLeftRightBalance;
   final int? restSincePrevious;
 
@@ -27,6 +29,7 @@ class EffortSummary {
       avgHeartRate: avgHeartRate,
       maxHeartRate: maxHeartRate,
       avgCadence: avgCadence,
+      peakCadence: peakCadence,
       avgLeftRightBalance: avgLeftRightBalance,
       restSincePrevious: restSincePrevious ?? this.restSincePrevious,
     );

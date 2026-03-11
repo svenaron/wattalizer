@@ -32,6 +32,7 @@ class Effort {
         avgHeartRate: row.avgHeartRate,
         maxHeartRate: row.maxHeartRate,
         avgCadence: row.avgCadence,
+        peakCadence: row.peakCadence,
         avgLeftRightBalance: row.avgLeftRightBalance,
         restSincePrevious: row.restSincePrevious,
       ),
@@ -53,6 +54,7 @@ class Effort {
       avgHeartRate: Value.absentIfNull(summary.avgHeartRate),
       maxHeartRate: Value.absentIfNull(summary.maxHeartRate),
       avgCadence: Value.absentIfNull(summary.avgCadence),
+      peakCadence: Value.absentIfNull(summary.peakCadence),
       avgLeftRightBalance: Value.absentIfNull(summary.avgLeftRightBalance),
       restSincePrevious: Value.absentIfNull(summary.restSincePrevious),
     );

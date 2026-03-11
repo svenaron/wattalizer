@@ -33,7 +33,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,14 +63,13 @@ class AppDatabase extends _$AppDatabase {
           await _seedBuiltInConfigs(m.database);
         },
         onUpgrade: (m, from, to) async {
-          if (from < 5) {
+          if (from < 6) {
             for (final entity in allSchemaEntities.toList().reversed) {
               await m.drop(entity);
             }
             await m.createAll();
             await _seedDefaultAthlete(m.database);
             await _seedBuiltInConfigs(m.database);
-            return;
           }
         },
       );
