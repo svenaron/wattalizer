@@ -124,7 +124,7 @@ class AutoLapDetector {
 
         if (power != null &&
             power < _inEffortTrailing.average - config.endDeltaWatts) {
-          _tentativeEndOffset = offset;
+          _tentativeEndOffset = offset - 1;
           _confirmCount = 1;
           _inEffortTrailing.freeze();
 
@@ -178,10 +178,10 @@ class AutoLapDetector {
           _inEffortTrailing.clear();
           _peakWatts = null;
 
-          final duration = offset - _tentativeStartOffset;
+          final duration = _tentativeEndOffset - _tentativeStartOffset;
           return EffortEndedEvent(
             startOffset: _tentativeStartOffset,
-            endOffset: offset,
+            endOffset: _tentativeEndOffset,
             isManual: false,
             wasTooShort: duration < config.minEffortSeconds,
             wasTooWeak:
@@ -254,7 +254,7 @@ class AutoLapDetector {
         return [
           EffortEndedEvent(
             startOffset: _tentativeStartOffset,
-            endOffset: currentOffset,
+            endOffset: _tentativeEndOffset,
             isManual: true,
             wasTooShort: false,
             wasTooWeak: false,
@@ -294,7 +294,7 @@ class AutoLapDetector {
         _peakWatts = null;
         return EffortEndedEvent(
           startOffset: _tentativeStartOffset,
-          endOffset: currentOffset,
+          endOffset: _tentativeEndOffset,
           isManual: false,
           wasTooShort: false,
           wasTooWeak:
