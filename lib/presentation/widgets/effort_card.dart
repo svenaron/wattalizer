@@ -116,6 +116,8 @@ class EffortCard extends StatelessWidget {
           MapCurveChart(
             curve: effort.mapCurve,
             historicalRange: historicalRange,
+            provenanceRecords: historicalRange?.best,
+            lowerProvenanceRecords: historicalRange?.worst,
             effortDuration: effort.summary.durationSeconds,
           ),
           const SizedBox(height: 12),
