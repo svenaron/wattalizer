@@ -66,7 +66,8 @@ class _MapCurveChartState extends State<MapCurveChart> {
         response?.lineBarSpots?.where((s) => s.barIndex == 0).firstOrNull;
     final isExit = event is FlPointerExitEvent ||
         event is FlPanEndEvent ||
-        event is FlLongPressEnd;
+        event is FlLongPressEnd ||
+        event is FlTapUpEvent;
 
     final useInfoStrip = !widget.compact &&
         !widget.suppressInfoStrip &&
