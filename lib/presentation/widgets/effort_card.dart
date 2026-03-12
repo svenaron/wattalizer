@@ -403,7 +403,7 @@ class _CombinedInfoStrip extends StatelessWidget {
             ],
             if (worst != null) ...[
               Text('  |  ', style: mutedStyle),
-              Text('Worst ', style: mutedStyle),
+              Text('10th best ', style: mutedStyle),
               Text(worstPow ?? '--', style: brightStyle),
             ],
           ],
