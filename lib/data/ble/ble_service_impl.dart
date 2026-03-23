@@ -35,20 +35,34 @@ class BleServiceImpl implements domain.BleService {
   @override
   Stream<List<domain.DiscoveredDevice>> scanForDevices() {
     _scanAccumulator.clear();
+    final controller =
+        StreamController<List<domain.DiscoveredDevice>>.broadcast();
+    StreamSubscription<BleDevice>? scanSub;
+
     unawaited(
       UniversalBle.startScan(
         scanFilter: ScanFilter(
           withServices: [_powerServiceUuid, _hrServiceUuid, _cscServiceUuid],
         ),
-      ).catchError((_) {
-        // BLE not available (e.g. iOS simulator) — silently ignore.
+      ).then((_) {
+        scanSub = UniversalBle.scanStream.listen(
+          (device) {
+            final mapped = _mapScanResult(device);
+            _scanAccumulator[mapped.deviceId] = mapped;
+            if (!controller.isClosed) {
+              controller.add(_scanAccumulator.values.toList());
+            }
+          },
+          onError: controller.addError,
+        );
+      }).catchError((Object e) {
+        if (!controller.isClosed) controller.addError(e);
+        unawaited(controller.close());
       }),
     );
-    return UniversalBle.scanStream.map((device) {
-      final mapped = _mapScanResult(device);
-      _scanAccumulator[mapped.deviceId] = mapped;
-      return _scanAccumulator.values.toList();
-    });
+
+    controller.onCancel = () => scanSub?.cancel();
+    return controller.stream;
   }
 
   domain.DiscoveredDevice _mapScanResult(BleDevice device) {

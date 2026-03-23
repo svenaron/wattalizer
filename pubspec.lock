@@ -944,10 +944,9 @@ packages:
   universal_ble:
     dependency: "direct main"
     description:
-      name: universal_ble
-      sha256: "8325ca9f5cce2fba2b4efef74a4fcfe7144f303b409d6fc6ed16197b00a1a241"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/universal_ble"
+      relative: true
+    source: path
     version: "1.2.0"
   url_launcher_linux:
     dependency: transitive

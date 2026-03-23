@@ -52,3 +52,7 @@ flutter_launcher_icons:
   linux:
     generate: true
     image_path: "assets/icon/wattalizer_icon_1024.png"
+
+dependency_overrides:
+  universal_ble:
+    path: packages/universal_ble

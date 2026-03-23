@@ -16,7 +16,6 @@ import 'package:wattalizer/presentation/providers/ride_repository_provider.dart'
 /// Medium/Expanded (>=600dp): centered dialog.
 void showDeviceSheet(BuildContext context) {
   final width = MediaQuery.sizeOf(context).width;
-
   if (width < 600) {
     unawaited(
       showModalBottomSheet<void>(
@@ -75,12 +74,36 @@ class _DeviceSheetContentState extends ConsumerState<_DeviceSheetContent> {
 
   void _startScan() {
     _scanResults = [];
-    _scanSub = _bleService.scanForDevices().listen((devices) {
-      if (!mounted) return;
-      setState(() {
-        _scanResults = List.from(devices);
-      });
-    });
+    _scanSub = _bleService.scanForDevices().listen(
+      (devices) {
+        if (!mounted) return;
+        setState(() {
+          _scanResults = List.from(devices);
+        });
+      },
+      onError: (Object e, StackTrace st) {
+        if (!mounted) return;
+        final msg = e.toString().contains('System Settings')
+            ? e.toString().replaceFirst(RegExp(r'^.*?:\s*'), '')
+            : 'Bluetooth is not available. Check System Settings'
+                ' → Privacy & Security → Bluetooth.';
+        unawaited(
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Bluetooth Unavailable'),
+              content: Text(msg),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
