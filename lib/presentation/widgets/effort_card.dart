@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wattalizer/core/constants.dart';
 import 'package:wattalizer/domain/models/effort.dart';
 import 'package:wattalizer/domain/models/effort_summary.dart';
 import 'package:wattalizer/domain/models/historical_range.dart';
 import 'package:wattalizer/domain/models/sensor_reading.dart';
+import 'package:wattalizer/presentation/providers/chart_visibility_provider.dart';
 import 'package:wattalizer/presentation/widgets/map_curve_chart.dart';
 
 /// Expandable card showing per-effort stats and MAP curve.
-class EffortCard extends StatefulWidget {
+class EffortCard extends ConsumerStatefulWidget {
   const EffortCard({
     required this.effort,
     this.historicalRange,
@@ -35,10 +38,10 @@ class EffortCard extends StatefulWidget {
   final Key? expandedBodyKey;
 
   @override
-  State<EffortCard> createState() => _EffortCardState();
+  ConsumerState<EffortCard> createState() => _EffortCardState();
 }
 
-class _EffortCardState extends State<EffortCard> {
+class _EffortCardState extends ConsumerState<EffortCard> {
   double? _hoveredX;
 
   @override
@@ -106,6 +109,7 @@ class _EffortCardState extends State<EffortCard> {
   }
 
   Widget _expanded(EffortSummary s) {
+    final rollupSeconds = ref.watch(chartVisibilityProvider).rollupSeconds;
     final readings = widget.rawReadings ?? [];
     final hasTrace = readings.isNotEmpty;
     final hasCadenceData = readings.any((r) => r.cadence != null);
@@ -114,11 +118,11 @@ class _EffortCardState extends State<EffortCard> {
     SensorReading? hoveredReading;
     final hoveredX = _hoveredX;
     if (hasTrace && hoveredX != null) {
-      final base = readings.first.timestamp.inSeconds;
       final targetElapsed = hoveredX - 1;
       var bestDiff = double.infinity;
       for (final r in readings) {
-        final elapsed = (r.timestamp.inSeconds - base).toDouble();
+        final elapsed =
+            (r.timestamp.inSeconds - widget.effort.startOffset).toDouble();
         final diff = (elapsed - targetElapsed).abs();
         if (diff < bestDiff) {
           bestDiff = diff;
@@ -178,6 +182,48 @@ class _EffortCardState extends State<EffortCard> {
             cursorX: hasTrace ? _hoveredX : null,
           ),
           if (hasTrace) ...[
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final cs = Theme.of(context).colorScheme;
+                return Row(
+                  children: [
+                    Text(
+                      'Approach',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: rollupSeconds.toDouble(),
+                        max: kMaxRollupSeconds.toDouble(),
+                        divisions: kMaxRollupSeconds,
+                        onChanged: (v) => ref
+                            .read(chartVisibilityProvider.notifier)
+                            .setRollup(v.round()),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        rollupSeconds > 0
+                            ? '\u2212${rollupSeconds}s'
+                            : '\u2014',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+          if (hasTrace) ...[
             _ChartSectionHeader(
               label: 'Power',
               expanded: widget.showPower,
@@ -186,6 +232,8 @@ class _EffortCardState extends State<EffortCard> {
             if (widget.showPower)
               PowerTraceChart(
                 readings: readings,
+                effortStartOffset: widget.effort.startOffset,
+                rollupSeconds: rollupSeconds,
                 cursorX: _hoveredX,
                 onHoverX: (x) => setState(() => _hoveredX = x),
               ),
@@ -198,13 +246,17 @@ class _EffortCardState extends State<EffortCard> {
               if (widget.showCadence)
                 CadenceTraceChart(
                   readings: readings,
+                  effortStartOffset: widget.effort.startOffset,
+                  rollupSeconds: rollupSeconds,
                   cursorX: _hoveredX,
                   onHoverX: (x) => setState(() => _hoveredX = x),
                 ),
             ],
             const SizedBox(height: 4),
             _CombinedInfoStrip(
-              hoveredDur: _hoveredX?.toInt(),
+              hoveredDur: (_hoveredX != null && _hoveredX! >= 1)
+                  ? _hoveredX!.toInt()
+                  : null,
               mapPower: mapPower,
               historicalRange: widget.historicalRange,
               hoveredReading: hoveredReading,

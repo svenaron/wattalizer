@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:wattalizer/core/constants.dart';
 import 'package:wattalizer/domain/models/historical_range.dart';
 import 'package:wattalizer/domain/models/ride.dart';
 import 'package:wattalizer/domain/models/ride_summary.dart';
@@ -211,7 +212,8 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                         effortReadingsProvider(
                           (
                             rideId: e.rideId,
-                            startOffset: e.startOffset,
+                            startOffset: (e.startOffset - kMaxRollupSeconds)
+                                .clamp(0, e.startOffset),
                             endOffset: e.startOffset + 90,
                           ),
                         ),

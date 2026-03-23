@@ -462,10 +462,13 @@ SideTitles _traceLeftTitles(ColorScheme cs) => SideTitles(
 // ---------------------------------------------------------------------------
 
 /// Renders instantaneous power for a single effort over a 90s window.
-/// x = elapsed + 1 (x=1 at t=0, x=90 at t=89s), matching [MapCurveChart].
+/// x = elapsed + 1 (x=1 at effortStartOffset, x=90 at t+89s),
+/// matching [MapCurveChart].
 class PowerTraceChart extends StatelessWidget {
   const PowerTraceChart({
     required this.readings,
+    required this.effortStartOffset,
+    this.rollupSeconds = 0,
     this.cursorX,
     this.onHoverX,
     super.key,
@@ -473,10 +476,16 @@ class PowerTraceChart extends StatelessWidget {
 
   final List<SensorReading> readings;
 
-  /// Hover position (1–90) from the MAP chart. Null = no cursor.
+  /// Timestamp offset (seconds) of the effort start. x=1 maps here.
+  final int effortStartOffset;
+
+  /// How many seconds of approach to reveal left of x=1.
+  final int rollupSeconds;
+
+  /// Hover position from the MAP chart. Null = no cursor.
   final double? cursorX;
 
-  /// Called with the x position (1–90) when the user hovers this chart,
+  /// Called with the x position when the user hovers this chart,
   /// null on exit. Used to drive the MAP chart cursor.
   final void Function(double? x)? onHoverX;
 
@@ -485,8 +494,7 @@ class PowerTraceChart extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     if (readings.isEmpty) return const SizedBox.shrink();
 
-    final base = readings.first.timestamp.inSeconds;
-    final segs = _buildPowerSegments(readings, base);
+    final segs = _buildPowerSegments(readings, effortStartOffset);
     if (segs.isEmpty) return const SizedBox.shrink();
 
     var maxPwr = 0.0;
@@ -514,12 +522,25 @@ class PowerTraceChart extends StatelessWidget {
           LineChartData(
             lineBarsData: lineBars,
             extraLinesData: ExtraLinesData(
-              verticalLines: _cursorLines(
-                cursorX,
-                cs.onSurface.withValues(alpha: 0.35),
-              ),
+              verticalLines: [
+                ..._cursorLines(
+                  cursorX,
+                  cs.onSurface.withValues(alpha: 0.35),
+                ),
+                if (rollupSeconds > 0)
+                  VerticalLine(
+                    x: 1,
+                    color: cs.primary.withValues(alpha: 0.5),
+                    strokeWidth: 1,
+                    label: VerticalLineLabel(
+                      show: true,
+                      labelResolver: (_) => 'start',
+                      style: TextStyle(fontSize: 9, color: cs.primary),
+                    ),
+                  ),
+              ],
             ),
-            minX: 1,
+            minX: rollupSeconds > 0 ? (1 - rollupSeconds).toDouble() : 1.0,
             maxX: 90,
             minY: 0,
             maxY: maxY,
@@ -557,12 +578,12 @@ class PowerTraceChart extends StatelessWidget {
 
   static List<List<FlSpot>> _buildPowerSegments(
     List<SensorReading> readings,
-    int base,
+    int effortStartOffset,
   ) {
     final segs = <List<FlSpot>>[];
     var cur = <FlSpot>[];
     for (final r in readings) {
-      final x = (r.timestamp.inSeconds - base).toDouble() + 1;
+      final x = (r.timestamp.inSeconds - effortStartOffset).toDouble() + 1;
       if (r.power != null) {
         cur.add(FlSpot(x, r.power!));
       } else if (cur.isNotEmpty) {
@@ -584,6 +605,8 @@ class PowerTraceChart extends StatelessWidget {
 class CadenceTraceChart extends StatelessWidget {
   const CadenceTraceChart({
     required this.readings,
+    required this.effortStartOffset,
+    this.rollupSeconds = 0,
     this.cursorX,
     this.onHoverX,
     super.key,
@@ -591,10 +614,16 @@ class CadenceTraceChart extends StatelessWidget {
 
   final List<SensorReading> readings;
 
-  /// Hover position (1–90) from the MAP chart. Null = no cursor.
+  /// Timestamp offset (seconds) of the effort start. x=1 maps here.
+  final int effortStartOffset;
+
+  /// How many seconds of approach to reveal left of x=1.
+  final int rollupSeconds;
+
+  /// Hover position from the MAP chart. Null = no cursor.
   final double? cursorX;
 
-  /// Called with the x position (1–90) when the user hovers this chart,
+  /// Called with the x position when the user hovers this chart,
   /// null on exit. Used to drive the MAP chart cursor.
   final void Function(double? x)? onHoverX;
 
@@ -603,7 +632,6 @@ class CadenceTraceChart extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     if (readings.isEmpty) return const SizedBox.shrink();
 
-    final base = readings.first.timestamp.inSeconds;
     final cadValues = readings.where((r) => r.cadence != null).toList();
     if (cadValues.isEmpty) return const SizedBox.shrink();
 
@@ -611,7 +639,7 @@ class CadenceTraceChart extends StatelessWidget {
         cadValues.map((r) => r.cadence!).reduce((a, b) => a > b ? a : b);
     if (maxCad <= 0) return const SizedBox.shrink();
 
-    final segs = _buildCadenceSegments(readings, base);
+    final segs = _buildCadenceSegments(readings, effortStartOffset);
     if (segs.isEmpty) return const SizedBox.shrink();
 
     final lineBars = segs
@@ -633,12 +661,25 @@ class CadenceTraceChart extends StatelessWidget {
           LineChartData(
             lineBarsData: lineBars,
             extraLinesData: ExtraLinesData(
-              verticalLines: _cursorLines(
-                cursorX,
-                cs.onSurface.withValues(alpha: 0.35),
-              ),
+              verticalLines: [
+                ..._cursorLines(
+                  cursorX,
+                  cs.onSurface.withValues(alpha: 0.35),
+                ),
+                if (rollupSeconds > 0)
+                  VerticalLine(
+                    x: 1,
+                    color: cs.primary.withValues(alpha: 0.5),
+                    strokeWidth: 1,
+                    label: VerticalLineLabel(
+                      show: true,
+                      labelResolver: (_) => 'start',
+                      style: TextStyle(fontSize: 9, color: cs.primary),
+                    ),
+                  ),
+              ],
             ),
-            minX: 1,
+            minX: rollupSeconds > 0 ? (1 - rollupSeconds).toDouble() : 1.0,
             maxX: 90,
             minY: 0,
             maxY: (maxCad * 1.1).ceilToDouble(),
@@ -676,12 +717,12 @@ class CadenceTraceChart extends StatelessWidget {
 
   static List<List<FlSpot>> _buildCadenceSegments(
     List<SensorReading> readings,
-    int base,
+    int effortStartOffset,
   ) {
     final segs = <List<FlSpot>>[];
     var cur = <FlSpot>[];
     for (final r in readings) {
-      final x = (r.timestamp.inSeconds - base).toDouble() + 1;
+      final x = (r.timestamp.inSeconds - effortStartOffset).toDouble() + 1;
       if (r.cadence != null) {
         cur.add(FlSpot(x, r.cadence!));
       } else if (cur.isNotEmpty) {

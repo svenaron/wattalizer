@@ -111,6 +111,11 @@ const int kDefaultPreEffortBaselineWindow = 15;
 const int kDefaultInEffortTrailingWindow = 10;
 const double? kDefaultMinPeakWatts = null;
 
+// --- Roll-up slider ---
+
+/// Maximum number of pre-effort seconds the approach slider can reveal.
+const int kMaxRollupSeconds = 30;
+
 // --- UI / BLE timing constants ---
 
 const double kDefaultMaxPowerWatts = 1500;
