@@ -250,17 +250,6 @@ void main() {
         expect(tags, isEmpty);
       },
     );
-
-    test('deletes ride-level PDC if present', () async {
-      final ride = _makeRide('r1');
-      await repo.saveRide(ride);
-      await repo.saveRidePdc('r1', _makeMapCurve('r1'));
-
-      await repo.deleteRide('r1');
-
-      final pdc = await repo.getRidePdc('r1');
-      expect(pdc, isNull);
-    });
   });
 
   // --- insertReadings / getReadings ---

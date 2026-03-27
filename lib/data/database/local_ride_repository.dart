@@ -257,12 +257,6 @@ class LocalRideRepository implements RideRepository {
           )..where((t) => t.effortId.isIn(effortIds)))
               .go();
         }
-        // Delete ride-level PDC stored in map_curves
-        // (rideId used as effortId key)
-        await (_db.delete(
-          _db.mapCurves,
-        )..where((t) => t.effortId.equals(id)))
-            .go();
 
         await (_db.delete(
           _db.readings,
