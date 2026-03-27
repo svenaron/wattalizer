@@ -17,27 +17,47 @@ final NotifierProvider<RideSessionNotifier, RideState> rideSessionProvider =
 
 class RideSessionNotifier extends Notifier<RideState> {
   RideSessionManager? _manager; // null when idle
+  bool _isStarting = false;
 
   @override
   RideState build() => RideStateIdle();
 
   Future<void> startRide() async {
-    final repo = ref.read(rideRepositoryProvider);
-    final config = await ref.read(autoLapConfigProvider.future);
+    if (_isStarting || _manager != null || state is RideStateActive) return;
 
-    _manager = RideSessionManager(
-      repository: repo,
-      config: config,
-      onStateChanged: (s) => state = s,
-    );
-    _manager!.start(ref.read(sensorStreamProvider));
+    _isStarting = true;
+    try {
+      final repo = ref.read(rideRepositoryProvider);
+      final config = await ref.read(autoLapConfigProvider.future);
+
+      if (_manager != null || state is RideStateActive) return;
+
+      final manager = RideSessionManager(
+        repository: repo,
+        config: config,
+        onStateChanged: (s) => state = s,
+      );
+      _manager = manager;
+      manager.start(ref.read(sensorStreamProvider));
+    } on AppError catch (e) {
+      _manager = null;
+      state = RideStateError(message: 'Failed to start ride: $e');
+    } on Object catch (e) {
+      _manager = null;
+      state = RideStateError(message: 'Unexpected start error: $e');
+    } finally {
+      _isStarting = false;
+    }
   }
 
   void manualLap() => _manager?.manualLap();
 
   Future<void> endRide() async {
+    final manager = _manager;
+    if (manager == null) return;
+
     try {
-      final ride = await _manager?.end();
+      final ride = await manager.end();
       _manager = null;
       state = RideStateIdle(lastRide: ride)
         ..toString(); // silence unused warning
