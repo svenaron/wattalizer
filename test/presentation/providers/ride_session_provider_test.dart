@@ -44,6 +44,26 @@ void main() {
       expect(container.read(rideSessionProvider), isA<RideStateActive>());
     });
 
+    test('rapid double startRide() initializes only one session path',
+        () async {
+      final repo = FakeRepository();
+      final container = createTestContainer(repository: repo);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(rideSessionProvider.notifier);
+      final firstStart = notifier.startRide();
+      final secondStart = notifier.startRide();
+      await Future.wait([firstStart, secondStart]);
+
+      expect(container.read(rideSessionProvider), isA<RideStateActive>());
+
+      await notifier.endRide();
+      expect(repo.transactionCount, 1);
+      expect(repo.savedRides.length, 1);
+      expect(repo.insertedReadingsByRide.length, 1);
+      expect(repo.savedEffortsByRide.length, 1);
+    });
+
     test('endRide() after startRide() returns to RideStateIdle with lastRide',
         () async {
       final container = createTestContainer(repository: FakeRepository());
